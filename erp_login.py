@@ -14,7 +14,6 @@ PASSWORD = os.environ.get("PASSWORD")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-# Check if all required credentials are provided
 if not all([ROLL_NUMBER, PASSWORD, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID]):
     raise Exception("Missing required environment variables. Ensure ROLL_NUMBER, PASSWORD, TELEGRAM_BOT_TOKEN, and TELEGRAM_CHAT_ID are set.")
 
@@ -22,16 +21,16 @@ if not all([ROLL_NUMBER, PASSWORD, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID]):
 ERP_URL = "https://jecrc.mastersofterp.in/iitmsv4eGq0RuNHb0G5WbhLmTKLmTO7YBcJ4RHuXxCNPvuIw=?enc=EGbCGWnlHNJ/WdgJnKH8DA=="
 
 # ========== Set Tesseract Path ==========
-# For GitHub Actions on Ubuntu, Tesseract is typically at /usr/bin/tesseract
+# On GitHub Actions (Ubuntu), Tesseract is typically at /usr/bin/tesseract.
 pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
 
-# ========== Setup Chrome Driver with Additional Options ==========
+# ========== Setup Chrome Driver with Extra Options ==========
 chrome_options = uc.ChromeOptions()
 chrome_options.add_argument("--disable-blink-features=AutomationControlled")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-gpu")
-chrome_options.add_argument("--headless")  # Run in headless mode for CI environments
+chrome_options.add_argument("--headless")  # Run headless in CI
 chrome_options.add_argument("--remote-debugging-port=9222")
 
 driver = uc.Chrome(options=chrome_options)
@@ -40,7 +39,7 @@ time.sleep(3)  # Allow page to load
 
 # ========== LOGIN PROCESS ==========
 try:
-    # Locate the username field (try both possible IDs)
+    # Locate username field (try both possible IDs)
     try:
         username_field = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.ID, "txt_username"))
@@ -50,7 +49,7 @@ try:
             EC.presence_of_element_located((By.ID, "txtusername"))
         )
 
-    # Locate the password field (try both possible IDs)
+    # Locate password field (try both possible IDs)
     try:
         password_field = driver.find_element(By.ID, "txt_password")
     except Exception:
@@ -154,26 +153,35 @@ if "Successful" in login_status:
     time.sleep(2)
 
     try:
-        assignments_elements = driver.find_elements(By.XPATH, "//div[@class='sub-heading']/h5[contains(text(),'Assignments List')]")
-        if assignments_elements and len(assignments_elements) > 0:
-            assignment_container = assignments_elements[0].find_element(By.XPATH, "./ancestor::div[1]")
-            assignment_text = assignment_container.text.strip()
-            print("DEBUG: Full assignment container text:", assignment_text)
-            normalized_text = " ".join(assignment_text.lower().split())
-            if "you don't have any assignment" in normalized_text or "no assignment" in normalized_text:
-                assignment_message = "ℹ You don't have any Assignment to upload."
+        # First, try to check for a <p> element that indicates no assignment.
+        try:
+            no_assign_element = driver.find_element(By.XPATH, "//p[contains(@class, 'text-center') and contains(text(), \"don't have any Assignment\")]")
+            assignment_message = "ℹ You don't have any Assignment to upload."
+        except Exception:
+            # If the above element is not found, then check the container text.
+            assignments_elements = driver.find_elements(By.XPATH, "//div[@class='sub-heading']/h5[contains(text(),'Assignments List')]")
+            if assignments_elements and len(assignments_elements) > 0:
+                assignment_container = assignments_elements[0].find_element(By.XPATH, "./ancestor::div[1]")
+                assignment_text = assignment_container.text.strip()
+                print("DEBUG: Full assignment container text:", assignment_text)
+                normalized_text = " ".join(assignment_text.lower().split())
+                # If only header exists, assume no assignments.
+                if normalized_text == "assignments list":
+                    assignment_message = "ℹ You don't have any Assignment to upload."
+                else:
+                    assignment_message = "📢 You have assignments to upload:\n" + assignment_text
             else:
-                assignment_message = "📢 You have assignments to upload:\n" + assignment_text
-            print("Assignment Check:", assignment_message)
-            send_telegram_message(assignment_message)
-        else:
-            no_assignment_message = "ℹ No assignment list section found."
-            print(no_assignment_message)
-            send_telegram_message(no_assignment_message)
+                assignment_message = "ℹ No assignment list section found."
+        print("Assignment Check:", assignment_message)
+        send_telegram_message(assignment_message)
     except Exception as e:
         error_message = "❌ Error checking assignments: " + str(e)
         print(error_message)
         send_telegram_message(error_message)
 
-input("Press Enter to exit and close the browser...")
+# ========== FINISH ==========
+try:
+    input("Press Enter to exit and close the browser...")
+except EOFError:
+    pass
 driver.quit()
