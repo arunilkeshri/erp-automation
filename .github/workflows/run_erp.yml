@@ -2,16 +2,16 @@ name: ERP Automation
 
 on:
   schedule:
-    - cron: '0 14 * * *'  # Runs at 2:00 PM UTC (adjust time as needed)
-    - cron: '0 20 * * *'  # Runs at 8:00 PM UTC (adjust time as needed)
+    - cron: '0 14 * * *'  # Runs at 2:00 PM UTC (adjust as needed)
+    - cron: '0 20 * * *'  # Runs at 8:00 PM UTC (adjust as needed)
   workflow_dispatch:
 
 jobs:
   run-erp:
     runs-on: ubuntu-latest
     env:
-      ERP_USERNAME: ${{ secrets.ERP_USERNAME }}
-      ERP_PASSWORD: ${{ secrets.ERP_PASSWORD }}
+      ROLL_NUMBER: ${{ secrets.ROLL_NUMBER }}
+      PASSWORD: ${{ secrets.PASSWORD }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
     steps:
@@ -27,7 +27,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y chromium-browser tesseract-ocr
-          # On Ubuntu, Tesseract is typically located at /usr/bin/tesseract
 
       - name: Install Python dependencies
         run: |
@@ -36,6 +35,5 @@ jobs:
 
       - name: Run ERP Automation Script
         run: |
-          # Set Tesseract path for Ubuntu if necessary
           export TESSERACT_CMD=/usr/bin/tesseract
           python erp_login.py
