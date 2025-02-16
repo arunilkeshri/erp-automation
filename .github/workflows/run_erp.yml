@@ -1,0 +1,41 @@
+name: ERP Automation
+
+on:
+  schedule:
+    - cron: '0 14 * * *'  # Runs at 2:00 PM UTC (adjust time as needed)
+    - cron: '0 20 * * *'  # Runs at 8:00 PM UTC (adjust time as needed)
+  workflow_dispatch:
+
+jobs:
+  run-erp:
+    runs-on: ubuntu-latest
+    env:
+      ERP_USERNAME: ${{ secrets.ERP_USERNAME }}
+      ERP_PASSWORD: ${{ secrets.ERP_PASSWORD }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install system dependencies for Chrome and Tesseract
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser tesseract-ocr
+          # On Ubuntu, Tesseract is typically located at /usr/bin/tesseract
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run ERP Automation Script
+        run: |
+          # Set Tesseract path for Ubuntu if necessary
+          export TESSERACT_CMD=/usr/bin/tesseract
+          python erp_login.py
