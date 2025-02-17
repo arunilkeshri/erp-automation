@@ -21,8 +21,7 @@ if not all([ROLL_NUMBER, PASSWORD, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID]):
 ERP_URL = "https://jecrc.mastersofterp.in/iitmsv4eGq0RuNHb0G5WbhLmTKLmTO7YBcJ4RHuXxCNPvuIw=?enc=EGbCGWnlHNJ/WdgJnKH8DA=="
 
 # ========== Set Tesseract Path ==========
-# On GitHub Actions (Ubuntu), Tesseract is typically at /usr/bin/tesseract.
-pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
+pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"  # For GitHub Actions on Ubuntu
 
 # ========== Setup Chrome Driver with Extra Options ==========
 chrome_options = uc.ChromeOptions()
@@ -109,7 +108,7 @@ send_telegram_message(login_status)
 
 # ========== POST-LOGIN ACTIONS ==========
 if "Successful" in login_status:
-    # 1. Close Notice/News Popup if present
+    # Close Notice/News Popup if present
     try:
         notice_modal = WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.ID, "noticemodal"))
@@ -120,7 +119,7 @@ if "Successful" in login_status:
     except Exception as e:
         print("ℹ No notice popup found or already closed.")
 
-    # 2. Click the LMS button
+    # Click the LMS button
     try:
         lms_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.XPATH, "//a[contains(@onclick, \"__doPostBack('ctl00$mainMenu','6')\") and contains(text(),'LMS')]"))
@@ -131,7 +130,7 @@ if "Successful" in login_status:
     except Exception as e:
         print("❌ LMS button not found:", e)
 
-    # 3. Click the Transactions option from the LMS dropdown
+    # Click the Transactions option from the LMS dropdown
     try:
         transaction_option = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.XPATH, "//a[contains(text(),'Transactions')]"))
@@ -142,7 +141,7 @@ if "Successful" in login_status:
     except Exception as e:
         print("❌ Transactions option not found:", e)
 
-    # 4. Click the bell icon (notification icon) on the right
+    # Click the bell icon (notification icon) on the right
     try:
         bell_icon = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.ID, "ctl00_ContentPlaceHolder1_imgNotify"))
@@ -153,32 +152,39 @@ if "Successful" in login_status:
     except Exception as e:
         print("❌ Bell icon not found:", e)
 
-    # 5. Scroll down to reveal the assignments section
+    # Scroll down to reveal the assignment list section
     driver.execute_script("window.scrollBy(0, 300);")
     time.sleep(2)
 
-    # 6. Check for the assignments table with ID "DataTables_Table_1"
+    # Updated Assignment Check:
+    assignment_message = ""
     try:
-        # Wait longer (up to 60 seconds) for the table to become visible.
-        assignment_table = WebDriverWait(driver, 60).until(
-            EC.visibility_of_element_located((By.ID, "DataTables_Table_1"))
-        )
-        rows = assignment_table.find_elements(By.XPATH, ".//tbody/tr")
-        if rows and len(rows) > 0:
-            # If there is exactly one row and it contains "you don't have any assignment", then no assignments.
-            if len(rows) == 1 and "you don't have any assignment" in rows[0].text.lower():
+        # First, try to find the assignments table by ID
+        tables = driver.find_elements(By.ID, "DataTables_Table_1")
+        if tables:
+            assignment_table = tables[0]
+            rows = assignment_table.find_elements(By.XPATH, ".//tbody/tr")
+            if rows and len(rows) > 0:
+                # If exactly one row and it indicates no assignment
+                if len(rows) == 1 and "you don't have any assignment" in rows[0].text.lower():
+                    assignment_message = "ℹ You don't have any Assignment to upload."
+                else:
+                    # Compile row texts
+                    row_texts = [row.text.strip() for row in rows if row.text.strip()]
+                    assignment_message = "📢 You have assignments to upload:\n" + "\n".join(row_texts)
+            else:
+                assignment_message = "ℹ You don't have any Assignment to upload."
+        else:
+            # If no table found, try to locate a <p> element with the no assignment message
+            no_assign_elem = driver.find_elements(By.XPATH, "//p[contains(translate(text(),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),\"you don't have any assignment\")]")
+            if no_assign_elem:
                 assignment_message = "ℹ You don't have any Assignment to upload."
             else:
-                row_texts = [" ".join(row.text.split()) for row in rows]
-                assignment_message = "📢 You have assignments to upload:\n" + "\n".join(row_texts)
-        else:
-            assignment_message = "ℹ You don't have any Assignment to upload."
-        print("Assignment Check:", assignment_message)
-        send_telegram_message(assignment_message)
+                assignment_message = "ℹ No assignment list section found."
     except Exception as e:
-        error_message = "❌ Error checking assignments: " + str(e)
-        print(error_message)
-        send_telegram_message(error_message)
+        assignment_message = "❌ Error checking assignments: " + str(e)
+    print("Assignment Check:", assignment_message)
+    send_telegram_message(assignment_message)
 
 # ========== FINISH ==========
 try:
