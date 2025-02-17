@@ -72,7 +72,7 @@ try:
         img = img.filter(ImageFilter.MedianFilter())  # Reduce noise
         enhancer = ImageEnhance.Contrast(img)
         img = enhancer.enhance(2)  # Increase contrast
-        img.save("processed_captcha.png")  # Optional: save for debugging
+        img.save("processed_captcha.png")  # Optional: save processed image for debugging
         return pytesseract.image_to_string(img, config="--psm 6").strip()
 
     captcha_text = process_captcha("captcha.png")
@@ -153,16 +153,23 @@ if "Successful" in login_status:
     except Exception as e:
         print("❌ Bell icon not found:", e)
 
-    # 5. Scroll down further to reveal the assignment table
+    # 5. Scroll down further to reveal the assignment table (scroll 600px and wait)
     driver.execute_script("window.scrollBy(0, 600);")
     time.sleep(5)
 
-    # 6. Check for the assignments table with ID "DataTables_Table_1"
+    # 6. Check for the assignments table by trying ID, then fallback to XPath by class
     try:
-        assignment_table = driver.find_element(By.ID, "DataTables_Table_1")
+        try:
+            assignment_table = WebDriverWait(driver, 60).until(
+                EC.visibility_of_element_located((By.ID, "DataTables_Table_1"))
+            )
+        except Exception as e:
+            print("Could not find table by ID, trying by XPath...")
+            assignment_table = WebDriverWait(driver, 60).until(
+                EC.visibility_of_element_located((By.XPATH, "//table[contains(@class, 'dataTable')]"))
+            )
         rows = assignment_table.find_elements(By.XPATH, ".//tbody/tr")
         if rows and len(rows) > 0:
-            # If exactly one row and it contains "you don't have any assignment", then assume no assignments.
             if len(rows) == 1 and "you don't have any assignment" in rows[0].text.lower():
                 assignment_message = "ℹ You don't have any Assignment to upload."
             else:
