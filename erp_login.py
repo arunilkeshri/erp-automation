@@ -21,7 +21,7 @@ if not all([ROLL_NUMBER, PASSWORD, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID]):
 ERP_URL = "https://jecrc.mastersofterp.in/iitmsv4eGq0RuNHb0G5WbhLmTKLmTO7YBcJ4RHuXxCNPvuIw=?enc=EGbCGWnlHNJ/WdgJnKH8DA=="
 
 # ========== Set Tesseract Path ==========
-# For GitHub Actions on Ubuntu, Tesseract is typically at /usr/bin/tesseract.
+# For GitHub Actions on Ubuntu, Tesseract is typically installed at /usr/bin/tesseract.
 pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
 
 # ========== Setup Chrome Driver with Extra Options ==========
@@ -72,7 +72,7 @@ try:
         img = img.filter(ImageFilter.MedianFilter())  # Reduce noise
         enhancer = ImageEnhance.Contrast(img)
         img = enhancer.enhance(2)  # Increase contrast
-        img.save("processed_captcha.png")  # Optional: save for debugging
+        img.save("processed_captcha.png")  # Optional: save processed image for debugging
         return pytesseract.image_to_string(img, config="--psm 6").strip()
 
     captcha_text = process_captcha("captcha.png")
@@ -153,27 +153,36 @@ if "Successful" in login_status:
     except Exception as e:
         print("❌ Bell icon not found:", e)
 
-    # 5. Scroll down further to reveal the assignment table
+    # 5. Scroll down further to reveal the assignment table (scroll 600px and wait)
     driver.execute_script("window.scrollBy(0, 600);")
     time.sleep(5)
 
-    # 6. Check for the assignments table by ID first, else by class
-    assignment_tables = driver.find_elements(By.ID, "DataTables_Table_1")
-    if not assignment_tables:
-        # If the table is not found, assume no assignments
-        assignment_message = "ℹ You don't have any Assignment to upload."
-    else:
-        assignment_table = assignment_tables[0]
+    # 6. Check for the assignments table by trying ID, then fallback to XPath by class
+    try:
+        try:
+            assignment_table = WebDriverWait(driver, 60).until(
+                EC.visibility_of_element_located((By.ID, "DataTables_Table_1"))
+            )
+        except Exception as e:
+            print("Could not find table by ID, trying by XPath...")
+            assignment_table = WebDriverWait(driver, 60).until(
+                EC.visibility_of_element_located((By.XPATH, "//table[contains(@class, 'dataTable')]"))
+            )
         rows = assignment_table.find_elements(By.XPATH, ".//tbody/tr")
-        if not rows or len(rows) == 0:
-            assignment_message = "ℹ You don't have any Assignment to upload."
-        elif len(rows) == 1 and "you don't have any assignment" in rows[0].text.lower():
-            assignment_message = "ℹ You don't have any Assignment to upload."
+        if rows and len(rows) > 0:
+            if len(rows) == 1 and "you don't have any assignment" in rows[0].text.lower():
+                assignment_message = "ℹ You don't have any Assignment to upload."
+            else:
+                row_texts = [ " ".join(row.text.split()) for row in rows if row.text.strip() ]
+                assignment_message = "📢 You have assignments to upload:\n" + "\n".join(row_texts)
         else:
-            row_texts = [" ".join(row.text.split()) for row in rows if row.text.strip()]
-            assignment_message = "📢 You have assignments to upload:\n" + "\n".join(row_texts)
-    print("Assignment Check:", assignment_message)
-    send_telegram_message(assignment_message)
+            assignment_message = "ℹ You don't have any Assignment to upload."
+        print("Assignment Check:", assignment_message)
+        send_telegram_message(assignment_message)
+    except Exception as e:
+        error_message = "❌ Error checking assignments: " + str(e)
+        print(error_message)
+        send_telegram_message(error_message)
 
 # ========== FINISH ==========
 try:
