@@ -68,11 +68,11 @@ try:
     captcha_element.screenshot("captcha.png")
 
     def process_captcha(image_path):
-        img = Image.open(image_path).convert("L")  # Convert to grayscale
-        img = img.filter(ImageFilter.MedianFilter())  # Reduce noise
+        img = Image.open(image_path).convert("L")  # Grayscale
+        img = img.filter(ImageFilter.MedianFilter())  # Noise reduction
         enhancer = ImageEnhance.Contrast(img)
         img = enhancer.enhance(2)  # Increase contrast
-        img.save("processed_captcha.png")  # Optional: save processed image for debugging
+        img.save("processed_captcha.png")  # Optional debug image
         return pytesseract.image_to_string(img, config="--psm 6").strip()
 
     captcha_text = process_captcha("captcha.png")
@@ -159,26 +159,35 @@ if "Successful" in login_status:
 
     # 6. Check for the assignments table with ID "DataTables_Table_1"
     try:
-        assignment_table = WebDriverWait(driver, 20).until(
+        assignment_table = WebDriverWait(driver, 30).until(
             EC.presence_of_element_located((By.ID, "DataTables_Table_1"))
         )
         rows = assignment_table.find_elements(By.XPATH, ".//tbody/tr")
         if rows and len(rows) > 0:
-            # Create a list of cleaned texts from each row
-            row_texts = [" ".join(row.text.split()) for row in rows]
-            # If there is exactly one row and it contains "you don't have any assignment", then no assignment exists.
-            if len(row_texts) == 1 and ("you don't have any assignment" in row_texts[0].lower()):
+            # If there's exactly one row and it says "you don't have any assignment", then no assignments.
+            if len(rows) == 1 and "you don't have any assignment" in rows[0].text.lower():
                 assignment_message = "ℹ You don't have any Assignment to upload."
             else:
+                # Otherwise, compile the row texts
+                row_texts = [" ".join(row.text.split()) for row in rows]
                 assignment_message = "📢 You have assignments to upload:\n" + "\n".join(row_texts)
         else:
             assignment_message = "ℹ You don't have any Assignment to upload."
         print("Assignment Check:", assignment_message)
         send_telegram_message(assignment_message)
     except Exception as e:
-        error_message = "❌ Error checking assignments: " + str(e)
-        print(error_message)
-        send_telegram_message(error_message)
+        # If the table is not found, try to check for a <p> element with no assignments
+        try:
+            no_assign_elem = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, "//p[contains(translate(text(),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),\"don't have any assignment\")]"))
+            )
+            assignment_message = "ℹ You don't have any Assignment to upload."
+            print("Assignment Check:", assignment_message)
+            send_telegram_message(assignment_message)
+        except Exception as e2:
+            error_message = "❌ Error checking assignments: " + str(e)
+            print(error_message)
+            send_telegram_message(error_message)
 
 # ========== FINISH ==========
 try:
