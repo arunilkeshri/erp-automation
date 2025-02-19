@@ -90,17 +90,17 @@ Telegram Bot API – Sending notifications
 
 **5. Challenges & Solutions**
 
-1. CAPTCHA Blocking Login
+  1. CAPTCHA Blocking Login
 
 Problem: The ERP system requires CAPTCHA verification, making automation difficult.
 Solution: Integrated Tesseract OCR to dynamically extract and solve the CAPTCHA.
 
-2. Pop-ups & Slow Page Loading
+  2. Pop-ups & Slow Page Loading
 
 Problem: Unexpected pop-ups and slow loading affected navigation.
 Solution: Used WebDriverWait to handle delays and close pop-ups dynamically.
 
-3. Assignments Table Not Always Visible
+  3. Assignments Table Not Always Visible
 
 Problem: The table sometimes didn’t load, causing errors.
 Solution:
@@ -109,12 +109,12 @@ If no table is found → Assume no assignments and send a message.
 If a table is found but contains only one row stating ‘No Assignments’ → Send a message indicating no assignments.
 If assignments exist → Extract and send details via Telegram.
 
-4. Telegram Notification Setup
+  4. Telegram Notification Setup
 
 Problem: Ensuring secure communication with Telegram API.
 Solution: Used GitHub Secrets to store the API token securely, preventing exposure.
 
-5.Future Improvements
+**6.Future Improvements**
 
   a Enhance CAPTCHA solving with AI-based OCR models.
   
