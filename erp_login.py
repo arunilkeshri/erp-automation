@@ -21,8 +21,7 @@ if not all([ROLL_NUMBER, PASSWORD, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID]):
 ERP_URL = "https://jecrc.mastersofterp.in/iitmsv4eGq0RuNHb0G5WbhLmTKLmTO7YBcJ4RHuXxCNPvuIw=?enc=EGbCGWnlHNJ/WdgJnKH8DA=="
 
 # ========== Set Tesseract Path ==========
-# For GitHub Actions on Ubuntu, Tesseract is typically installed at /usr/bin/tesseract.
-pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
+pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"  # For GitHub Actions on Ubuntu
 
 # ========== Setup Chrome Driver with Extra Options ==========
 chrome_options = uc.ChromeOptions()
@@ -33,7 +32,9 @@ chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--headless")  # Run headless in CI environments
 chrome_options.add_argument("--remote-debugging-port=9222")
 
-driver = uc.Chrome(options=chrome_options)
+# Force undetected_chromedriver to use ChromeDriver version for Chrome version 133
+driver = uc.Chrome(options=chrome_options, version_main=133)
+
 driver.get(ERP_URL)
 time.sleep(3)  # Allow page to load
 
