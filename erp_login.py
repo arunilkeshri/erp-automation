@@ -21,8 +21,7 @@ if not all([ROLL_NUMBER, PASSWORD, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID]):
 ERP_URL = "https://jecrc.mastersofterp.in/iitmsv4eGq0RuNHb0G5WbhLmTKLmTO7YBcJ4RHuXxCNPvuIw=?enc=EGbCGWnlHNJ/WdgJnKH8DA=="
 
 # ========== Set Tesseract Path ==========
-# For GitHub Actions on Ubuntu, Tesseract is typically installed at /usr/bin/tesseract.
-pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
+pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"  # For GitHub Actions on Ubuntu
 
 # ========== Setup Chrome Driver with Extra Options ==========
 chrome_options = uc.ChromeOptions()
@@ -32,9 +31,9 @@ chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--headless")  # Run headless in CI environments
 chrome_options.add_argument("--remote-debugging-port=9222")
-# Force using ChromeDriver for Chrome version 133 if needed:
-driver = uc.Chrome(options=chrome_options, version_main=133)
 
+# Force undetected_chromedriver to use ChromeDriver for Chrome version 133
+driver = uc.Chrome(options=chrome_options, version_main=133)
 driver.get(ERP_URL)
 time.sleep(3)  # Allow page to load
 
@@ -73,7 +72,7 @@ try:
         img = img.filter(ImageFilter.MedianFilter())  # Reduce noise
         enhancer = ImageEnhance.Contrast(img)
         img = enhancer.enhance(2)  # Increase contrast
-        img.save("processed_captcha.png")  # Optional: save processed image for debugging
+        img.save("processed_captcha.png")  # Optional: save for debugging
         return pytesseract.image_to_string(img, config="--psm 6").strip()
 
     captcha_text = process_captcha("captcha.png")
@@ -158,17 +157,11 @@ if "Successful" in login_status:
     driver.execute_script("window.scrollBy(0, 600);")
     time.sleep(5)
 
-    # 6. Check for the assignments table, using the updated ID "DataTables_Table_0"
+    # 6. Check for the assignments table using the updated ID "DataTables_Table_0"
     try:
-        try:
-            assignment_table = WebDriverWait(driver, 60).until(
-                EC.visibility_of_element_located((By.ID, "DataTables_Table_0"))
-            )
-        except Exception as e:
-            print("Could not find table by ID, trying by XPath...")
-            assignment_table = WebDriverWait(driver, 60).until(
-                EC.visibility_of_element_located((By.XPATH, "//table[contains(@class, 'dataTable')]"))
-            )
+        assignment_table = WebDriverWait(driver, 60).until(
+            EC.visibility_of_element_located((By.ID, "DataTables_Table_0"))
+        )
         rows = assignment_table.find_elements(By.XPATH, ".//tbody/tr")
         if rows and len(rows) > 0:
             if len(rows) == 1 and "you don't have any assignment" in rows[0].text.lower():
