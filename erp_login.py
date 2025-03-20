@@ -29,7 +29,7 @@ chrome_options.add_argument("--disable-blink-features=AutomationControlled")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-gpu")
-# For visual debugging, comment out headless mode if you wish to see the browser window
+# For visual debugging, comment out headless if you wish to see the browser window.
 chrome_options.add_argument("--headless")
 chrome_options.add_argument("--remote-debugging-port=9222")
 
@@ -154,11 +154,12 @@ if "Successful" in login_status:
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight/2);")
     time.sleep(3)
     
-    # Attempt to locate the assignments container
+    # Locate the assignments container using its ID using CSS selector
     try:
-        assignment_container = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, "divAssignments"))
+        assignment_container = WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "div#divAssignments"))
         )
+        print("✅ Assignment container found.")
     except Exception as e:
         print("❌ Assignment container not found:", e)
         assignment_container = None
@@ -168,11 +169,11 @@ if "Successful" in login_status:
         print(error_message)
         send_telegram_message(error_message)
     else:
-        # For debugging: Print the inner HTML of the assignments container
+        # For debugging: Print the inner HTML of the assignments container.
         container_html = assignment_container.get_attribute("innerHTML")
         print("Assignment Container HTML:\n", container_html)
         
-        # Locate the first table within the container
+        # Locate the first table within the container.
         try:
             assignment_table = assignment_container.find_element(By.TAG_NAME, "table")
             rows = assignment_table.find_elements(By.CSS_SELECTOR, "tbody tr")
