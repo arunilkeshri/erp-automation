@@ -29,7 +29,7 @@ chrome_options.add_argument("--disable-blink-features=AutomationControlled")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-gpu")
-# Visual debugging: agar dekhna ho, to headless mode comment out karein
+# Visual debugging: agar aap dekhna chahte hain toh headless mode comment out karein
 chrome_options.add_argument("--headless")
 chrome_options.add_argument("--remote-debugging-port=9222")
 
@@ -148,34 +148,46 @@ if "Successful" in login_status:
     except Exception as e:
         print("❌ Bell icon not found:", e)
     
-    # Scroll down gradually
+    # Scroll to bottom to load lazy content
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     time.sleep(5)
     
-    # Try to locate table using container div "ctl00_ContentPlaceHolder1_pnlAssignment"
-    try:
-        assignment_table = WebDriverWait(driver, 90).until(
-            EC.presence_of_element_located(
-                (By.XPATH, "//div[@id='ctl00_ContentPlaceHolder1_pnlAssignment']//table[@id='DataTables_Table_0']")
-            )
-        )
-        rows = assignment_table.find_elements(By.CSS_SELECTOR, "tbody tr")
-        print("Found", len(rows), "rows in the assignment table.")
-        if not rows or len(rows) == 0:
-            assignment_message = "ℹ You don't have any Assignment to upload."
-        elif len(rows) == 1 and "you don't have any assignment" in rows[0].text.lower():
-            assignment_message = "ℹ You don't have any Assignment to upload."
-        else:
-            row_texts = [" ".join(row.text.split()) for row in rows if row.text.strip()]
-            assignment_message = "📢 You have assignments to upload:\n" + "\n".join(row_texts)
-        print("Assignment Check:", assignment_message)
-        send_telegram_message(assignment_message)
-    except Exception as e:
-        error_message = "❌ Error checking assignments: " + str(e)
+    # Locate all tables with class containing 'dataTable'
+    tables = driver.find_elements(By.XPATH, "//table[contains(@class, 'dataTable')]")
+    found_table = None
+    for table in tables:
+        try:
+            # Check if header contains "Assignment"
+            header_text = table.find_element(By.XPATH, ".//thead").text.lower()
+            if "assignment" in header_text:
+                found_table = table
+                break
+        except Exception as e:
+            continue
+
+    if not found_table:
+        error_message = "❌ Assignment table not found using generic search."
         print(error_message)
-        page_snippet = driver.page_source[:2000]
-        print("Page source snippet:\n", page_snippet)
         send_telegram_message(error_message)
+    else:
+        try:
+            rows = found_table.find_elements(By.CSS_SELECTOR, "tbody tr")
+            print("Found", len(rows), "rows in the assignment table.")
+            if not rows or len(rows) == 0:
+                assignment_message = "ℹ You don't have any Assignment to upload."
+            elif len(rows) == 1 and "you don't have any assignment" in rows[0].text.lower():
+                assignment_message = "ℹ You don't have any Assignment to upload."
+            else:
+                row_texts = [" ".join(row.text.split()) for row in rows if row.text.strip()]
+                assignment_message = "📢 You have assignments to upload:\n" + "\n".join(row_texts)
+            print("Assignment Check:", assignment_message)
+            send_telegram_message(assignment_message)
+        except Exception as e:
+            error_message = "❌ Error checking assignments: " + str(e)
+            print(error_message)
+            page_snippet = driver.page_source[:2000]
+            print("Page source snippet:\n", page_snippet)
+            send_telegram_message(error_message)
 
 # ========= FINISH =========
 try:
