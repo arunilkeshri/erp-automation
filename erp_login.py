@@ -153,15 +153,15 @@ if "Successful" in login_status:
     except Exception as e:
         print("❌ Bell icon not found:", e)
 
-    # 5. Scroll down further to reveal the assignment table (scroll 600px and wait)
+    # 5. Scroll down further to reveal the assignment table
     driver.execute_script("window.scrollBy(0, 600);")
     time.sleep(5)
 
-    # 6. Check for the assignments table within the panel using XPath
+    # 6. Check for the assignments table using the ID "DataTables_Table_1"
     try:
-        # Use presence_of_element_located instead of visibility_of_element_located
+        # Wait for the table to be present
         assignment_table = WebDriverWait(driver, 60).until(
-            EC.presence_of_element_located((By.XPATH, "//div[@id='ctl00_ContentPlaceHolder1_pnlAssignment']//table[@id='DataTables_Table_1']"))
+            EC.presence_of_element_located((By.ID, "DataTables_Table_1"))
         )
         rows = assignment_table.find_elements(By.CSS_SELECTOR, "tbody tr")
         print("Found", len(rows), "rows in the assignment table.")
@@ -177,9 +177,9 @@ if "Successful" in login_status:
     except Exception as e:
         error_message = "❌ Error checking assignments: " + str(e)
         print(error_message)
-        # For additional debugging, print a snippet of page source length
-        page_source = driver.page_source
-        print("Page source length:", len(page_source))
+        # Optional: Debug by printing a snippet of the page source
+        page_snippet = driver.page_source[:1000]
+        print("Page source snippet:", page_snippet)
         send_telegram_message(error_message)
 
 # ========== FINISH ==========
