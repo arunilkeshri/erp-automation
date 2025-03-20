@@ -154,37 +154,44 @@ if "Successful" in login_status:
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight/2);")
     time.sleep(3)
     
-    # For debugging: Print the inner HTML of the assignments container.
+    # Attempt to locate the assignments container
     try:
         assignment_container = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.ID, "divAssignments"))
         )
+    except Exception as e:
+        print("❌ Assignment container not found:", e)
+        assignment_container = None
+
+    if assignment_container is None:
+        error_message = "❌ Assignment container is not defined."
+        print(error_message)
+        send_telegram_message(error_message)
+    else:
+        # For debugging: Print the inner HTML of the assignments container
         container_html = assignment_container.get_attribute("innerHTML")
         print("Assignment Container HTML:\n", container_html)
-    except Exception as e:
-        print("❌ Could not get assignment container HTML:", e)
-    
-    # Locate the assignments table within the stable container "divAssignments"
-    try:
-        # Locate the first table inside the container
-        assignment_table = assignment_container.find_element(By.TAG_NAME, "table")
-        rows = assignment_table.find_elements(By.CSS_SELECTOR, "tbody tr")
-        print("Found", len(rows), "rows in the assignment table.")
-        if not rows or len(rows) == 0:
-            assignment_message = "ℹ You don't have any Assignment to upload."
-        elif len(rows) == 1 and "you don't have any assignment" in rows[0].text.lower():
-            assignment_message = "ℹ You don't have any Assignment to upload."
-        else:
-            row_texts = [" ".join(row.text.split()) for row in rows if row.text.strip()]
-            assignment_message = "📢 You have assignments to upload:\n" + "\n".join(row_texts)
-        print("Assignment Check:", assignment_message)
-        send_telegram_message(assignment_message)
-    except Exception as e:
-        error_message = "❌ Error checking assignments: " + str(e)
-        print(error_message)
-        page_snippet = driver.page_source[:2000]
-        print("Page source snippet:\n", page_snippet)
-        send_telegram_message(error_message)
+        
+        # Locate the first table within the container
+        try:
+            assignment_table = assignment_container.find_element(By.TAG_NAME, "table")
+            rows = assignment_table.find_elements(By.CSS_SELECTOR, "tbody tr")
+            print("Found", len(rows), "rows in the assignment table.")
+            if not rows or len(rows) == 0:
+                assignment_message = "ℹ You don't have any Assignment to upload."
+            elif len(rows) == 1 and "you don't have any assignment" in rows[0].text.lower():
+                assignment_message = "ℹ You don't have any Assignment to upload."
+            else:
+                row_texts = [" ".join(row.text.split()) for row in rows if row.text.strip()]
+                assignment_message = "📢 You have assignments to upload:\n" + "\n".join(row_texts)
+            print("Assignment Check:", assignment_message)
+            send_telegram_message(assignment_message)
+        except Exception as e:
+            error_message = "❌ Error checking assignments: " + str(e)
+            print(error_message)
+            page_snippet = driver.page_source[:2000]
+            print("Page source snippet:\n", page_snippet)
+            send_telegram_message(error_message)
 
 # ========= FINISH =========
 try:
