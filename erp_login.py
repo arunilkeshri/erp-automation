@@ -21,7 +21,8 @@ if not all([ROLL_NUMBER, PASSWORD, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID]):
 ERP_URL = "https://jecrc.mastersofterp.in/iitmsv4eGq0RuNHb0G5WbhLmTKLmTO7YBcJ4RHuXxCNPvuIw=?enc=EGbCGWnlHNJ/WdgJnKH8DA=="
 
 # ========== Set Tesseract Path ==========
-pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"  # For GitHub Actions on Ubuntu
+# For GitHub Actions on Ubuntu, Tesseract is typically installed at /usr/bin/tesseract.
+pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
 
 # ========== Setup Chrome Driver with Extra Options ==========
 chrome_options = uc.ChromeOptions()
@@ -31,8 +32,7 @@ chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--headless")  # Run headless in CI environments
 chrome_options.add_argument("--remote-debugging-port=9222")
-
-# Force undetected_chromedriver to use ChromeDriver version for Chrome version 133
+# Force using ChromeDriver for Chrome version 133 if needed:
 driver = uc.Chrome(options=chrome_options, version_main=133)
 
 driver.get(ERP_URL)
@@ -154,15 +154,15 @@ if "Successful" in login_status:
     except Exception as e:
         print("❌ Bell icon not found:", e)
 
-    # 5. Scroll down further to reveal the assignment table (scroll 600px and wait)
+    # 5. Scroll down further to reveal the assignment table
     driver.execute_script("window.scrollBy(0, 600);")
     time.sleep(5)
 
-    # 6. Check for the assignments table by trying ID, then fallback to XPath by class
+    # 6. Check for the assignments table, using the updated ID "DataTables_Table_0"
     try:
         try:
             assignment_table = WebDriverWait(driver, 60).until(
-                EC.visibility_of_element_located((By.ID, "DataTables_Table_1"))
+                EC.visibility_of_element_located((By.ID, "DataTables_Table_0"))
             )
         except Exception as e:
             print("Could not find table by ID, trying by XPath...")
@@ -174,7 +174,7 @@ if "Successful" in login_status:
             if len(rows) == 1 and "you don't have any assignment" in rows[0].text.lower():
                 assignment_message = "ℹ You don't have any Assignment to upload."
             else:
-                row_texts = [ " ".join(row.text.split()) for row in rows if row.text.strip() ]
+                row_texts = [" ".join(row.text.split()) for row in rows if row.text.strip()]
                 assignment_message = "📢 You have assignments to upload:\n" + "\n".join(row_texts)
         else:
             assignment_message = "ℹ You don't have any Assignment to upload."
