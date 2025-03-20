@@ -29,7 +29,7 @@ chrome_options.add_argument("--disable-blink-features=AutomationControlled")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-gpu")
-# For visual debugging, comment out headless if you wish to see the browser window
+# For visual debugging, you can comment out the headless option:
 chrome_options.add_argument("--headless")
 chrome_options.add_argument("--remote-debugging-port=9222")
 
@@ -39,7 +39,7 @@ time.sleep(3)  # Allow page to load
 
 # ========= LOGIN PROCESS =========
 try:
-    # Locate username field (try both possible IDs)
+    # Locate username field (try both IDs)
     try:
         username_field = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.ID, "txt_username"))
@@ -48,7 +48,7 @@ try:
         username_field = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.ID, "txtusername"))
         )
-    # Locate password field (try both possible IDs)
+    # Locate password field (try both IDs)
     try:
         password_field = driver.find_element(By.ID, "txt_password")
     except Exception:
@@ -150,17 +150,14 @@ if "Successful" in login_status:
     except Exception as e:
         print("❌ Bell icon not found:", e)
     
-    # Scroll so that the "Assignments List" header is visible
+    # Scroll so that the "Assignments List" header and its container become visible
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight/2);")
     time.sleep(3)
     
-    # Locate the assignment table within the stable container "divAssignments"
+    # Locate the assignments table using the stable container "divAssignments"
     try:
-        # This relative XPath finds the "Assignments List" header then selects the first table after it.
         assignment_table = WebDriverWait(driver, 60).until(
-            EC.presence_of_element_located(
-                (By.XPATH, "//div[@id='divAssignments']//h5[normalize-space(text())='Assignments List']/following::table[1]")
-            )
+            EC.presence_of_element_located((By.XPATH, "//div[@id='divAssignments']//table"))
         )
         rows = assignment_table.find_elements(By.CSS_SELECTOR, "tbody tr")
         print("Found", len(rows), "rows in the assignment table.")
