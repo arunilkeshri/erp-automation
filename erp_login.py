@@ -21,7 +21,7 @@ if not all([ROLL_NUMBER, PASSWORD, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID]):
 ERP_URL = "https://jecrc.mastersofterp.in/iitmsv4eGq0RuNHb0G5WbhLmTKLmTO7YBcJ4RHuXxCNPvuIw=?enc=EGbCGWnlHNJ/WdgJnKH8DA=="
 
 # ========== Set Tesseract Path ==========
-pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"  # For GitHub Actions on Ubuntu
+pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"  # Adjust if needed
 
 # ========== Setup Chrome Driver with Extra Options ==========
 chrome_options = uc.ChromeOptions()
@@ -29,7 +29,8 @@ chrome_options.add_argument("--disable-blink-features=AutomationControlled")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-gpu")
-chrome_options.add_argument("--headless")  # Run headless in CI environments
+# Agar aap manually dekhna chahte hain to niche ki line ko comment out karein
+chrome_options.add_argument("--headless")
 chrome_options.add_argument("--remote-debugging-port=9222")
 
 # Force undetected_chromedriver to use ChromeDriver for Chrome version 133
@@ -153,14 +154,13 @@ if "Successful" in login_status:
     except Exception as e:
         print("❌ Bell icon not found:", e)
 
-    # 5. Scroll down further to reveal the assignment table
+    # 5. Scroll down to reveal the assignment table
     driver.execute_script("window.scrollBy(0, 600);")
     time.sleep(5)
 
-    # 6. Locate the assignment table using the provided ID DataTables_Table_0
+    # 6. Locate the assignment table using XPath with ID DataTables_Table_0
     try:
-        # Using XPath as provided
-        assignment_table = WebDriverWait(driver, 60).until(
+        assignment_table = WebDriverWait(driver, 90).until(
             EC.visibility_of_element_located((By.XPATH, "//*[@id='DataTables_Table_0']"))
         )
         rows = assignment_table.find_elements(By.CSS_SELECTOR, "tbody tr")
@@ -177,9 +177,9 @@ if "Successful" in login_status:
     except Exception as e:
         error_message = "❌ Error checking assignments: " + str(e)
         print(error_message)
-        # Debug: Print a snippet of the page source
-        page_snippet = driver.page_source[:1000]
-        print("Page source snippet:", page_snippet)
+        # Debug: Print a larger snippet of the page source to diagnose the issue
+        page_snippet = driver.page_source[:2000]
+        print("Page source snippet:\n", page_snippet)
         send_telegram_message(error_message)
 
 # ========== FINISH ==========
