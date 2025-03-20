@@ -29,8 +29,8 @@ chrome_options.add_argument("--disable-blink-features=AutomationControlled")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-gpu")
-# For debugging, try commenting out headless so you can see the browser:
-chrome_options.add_argument("--headless")  # Comment this out to run in normal mode
+# For visual debugging, comment out headless mode if you wish to see the browser window
+chrome_options.add_argument("--headless")
 chrome_options.add_argument("--remote-debugging-port=9222")
 
 driver = uc.Chrome(options=chrome_options, version_main=133)
@@ -150,16 +150,24 @@ if "Successful" in login_status:
     except Exception as e:
         print("❌ Bell icon not found:", e)
     
-    # Scroll so that the "Assignments List" header is visible
+    # Scroll so that the "Assignments List" header is visible.
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight/2);")
     time.sleep(3)
     
-    # Locate the assignments table from within the stable container "divAssignments"
+    # For debugging: Print the inner HTML of the assignments container.
     try:
-        # Using XPath that gets the first table inside the "divAssignments" container.
-        assignment_table = WebDriverWait(driver, 90).until(
-            EC.presence_of_element_located((By.XPATH, "//div[@id='divAssignments']//table"))
+        assignment_container = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "divAssignments"))
         )
+        container_html = assignment_container.get_attribute("innerHTML")
+        print("Assignment Container HTML:\n", container_html)
+    except Exception as e:
+        print("❌ Could not get assignment container HTML:", e)
+    
+    # Locate the assignments table within the stable container "divAssignments"
+    try:
+        # Locate the first table inside the container
+        assignment_table = assignment_container.find_element(By.TAG_NAME, "table")
         rows = assignment_table.find_elements(By.CSS_SELECTOR, "tbody tr")
         print("Found", len(rows), "rows in the assignment table.")
         if not rows or len(rows) == 0:
@@ -174,7 +182,6 @@ if "Successful" in login_status:
     except Exception as e:
         error_message = "❌ Error checking assignments: " + str(e)
         print(error_message)
-        # Print a snippet of the page source for debugging
         page_snippet = driver.page_source[:2000]
         print("Page source snippet:\n", page_snippet)
         send_telegram_message(error_message)
