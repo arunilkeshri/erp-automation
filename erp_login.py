@@ -159,19 +159,19 @@ if "Successful" in login_status:
 
     # 6. Check for the assignments table using the updated ID "DataTables_Table_0"
     try:
-        assignment_tables = driver.find_elements(By.ID, "DataTables_Table_0")
-        if not assignment_tables:
+        assignment_table = WebDriverWait(driver, 60).until(
+            EC.visibility_of_element_located((By.ID, "DataTables_Table_0"))
+        )
+        # Use CSS selector to find rows inside tbody
+        rows = assignment_table.find_elements(By.CSS_SELECTOR, "tbody tr")
+        print("Number of rows found:", len(rows))
+        if len(rows) == 0:
+            assignment_message = "ℹ You don't have any Assignment to upload."
+        elif len(rows) == 1 and "you don't have any assignment" in rows[0].text.lower():
             assignment_message = "ℹ You don't have any Assignment to upload."
         else:
-            assignment_table = assignment_tables[0]
-            rows = assignment_table.find_elements(By.XPATH, ".//tbody/tr")
-            if not rows or len(rows) == 0:
-                assignment_message = "ℹ You don't have any Assignment to upload."
-            elif len(rows) == 1 and "you don't have any assignment" in rows[0].text.lower():
-                assignment_message = "ℹ You don't have any Assignment to upload."
-            else:
-                row_texts = [" ".join(row.text.split()) for row in rows if row.text.strip()]
-                assignment_message = "📢 You have assignments to upload:\n" + "\n".join(row_texts)
+            row_texts = [" ".join(row.text.split()) for row in rows if row.text.strip()]
+            assignment_message = "📢 You have assignments to upload:\n" + "\n".join(row_texts)
         print("Assignment Check:", assignment_message)
         send_telegram_message(assignment_message)
     except Exception as e:
