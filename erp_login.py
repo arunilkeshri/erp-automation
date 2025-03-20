@@ -29,7 +29,7 @@ chrome_options.add_argument("--disable-blink-features=AutomationControlled")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-gpu")
-# Visual debugging: agar aap dekhna chahte hain toh headless mode comment out karein
+# For visual debugging, comment out headless mode if needed
 chrome_options.add_argument("--headless")
 chrome_options.add_argument("--remote-debugging-port=9222")
 
@@ -39,7 +39,7 @@ time.sleep(3)
 
 # ========= LOGIN PROCESS =========
 try:
-    # Username field
+    # Locate username field (try both possible IDs)
     try:
         username_field = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.ID, "txt_username"))
@@ -48,7 +48,7 @@ try:
         username_field = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.ID, "txtusername"))
         )
-    # Password field
+    # Locate password field (try both possible IDs)
     try:
         password_field = driver.find_element(By.ID, "txt_password")
     except Exception:
@@ -148,46 +148,32 @@ if "Successful" in login_status:
     except Exception as e:
         print("❌ Bell icon not found:", e)
     
-    # Scroll to bottom to load lazy content
-    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-    time.sleep(5)
+    # Scroll down to bring "Assignments List" into view
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight/2);")
+    time.sleep(3)
     
-    # Locate all tables with class containing 'dataTable'
-    tables = driver.find_elements(By.XPATH, "//table[contains(@class, 'dataTable')]")
-    found_table = None
-    for table in tables:
-        try:
-            # Check if header contains "Assignment"
-            header_text = table.find_element(By.XPATH, ".//thead").text.lower()
-            if "assignment" in header_text:
-                found_table = table
-                break
-        except Exception as e:
-            continue
-
-    if not found_table:
-        error_message = "❌ Assignment table not found using generic search."
+    # Now locate the assignment table with ID "DataTables_Table_2"
+    try:
+        assignment_table = WebDriverWait(driver, 60).until(
+            EC.presence_of_element_located((By.XPATH, "//*[@id='DataTables_Table_2']"))
+        )
+        rows = assignment_table.find_elements(By.CSS_SELECTOR, "tbody tr")
+        print("Found", len(rows), "rows in the assignment table.")
+        if not rows or len(rows) == 0:
+            assignment_message = "ℹ You don't have any Assignment to upload."
+        elif len(rows) == 1 and "you don't have any assignment" in rows[0].text.lower():
+            assignment_message = "ℹ You don't have any Assignment to upload."
+        else:
+            row_texts = [" ".join(row.text.split()) for row in rows if row.text.strip()]
+            assignment_message = "📢 You have assignments to upload:\n" + "\n".join(row_texts)
+        print("Assignment Check:", assignment_message)
+        send_telegram_message(assignment_message)
+    except Exception as e:
+        error_message = "❌ Error checking assignments: " + str(e)
         print(error_message)
+        page_snippet = driver.page_source[:2000]
+        print("Page source snippet:\n", page_snippet)
         send_telegram_message(error_message)
-    else:
-        try:
-            rows = found_table.find_elements(By.CSS_SELECTOR, "tbody tr")
-            print("Found", len(rows), "rows in the assignment table.")
-            if not rows or len(rows) == 0:
-                assignment_message = "ℹ You don't have any Assignment to upload."
-            elif len(rows) == 1 and "you don't have any assignment" in rows[0].text.lower():
-                assignment_message = "ℹ You don't have any Assignment to upload."
-            else:
-                row_texts = [" ".join(row.text.split()) for row in rows if row.text.strip()]
-                assignment_message = "📢 You have assignments to upload:\n" + "\n".join(row_texts)
-            print("Assignment Check:", assignment_message)
-            send_telegram_message(assignment_message)
-        except Exception as e:
-            error_message = "❌ Error checking assignments: " + str(e)
-            print(error_message)
-            page_snippet = driver.page_source[:2000]
-            print("Page source snippet:\n", page_snippet)
-            send_telegram_message(error_message)
 
 # ========= FINISH =========
 try:
