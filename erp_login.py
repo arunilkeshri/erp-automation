@@ -157,11 +157,10 @@ if "Successful" in login_status:
     driver.execute_script("window.scrollBy(0, 600);")
     time.sleep(5)
 
-    # 6. Check for the assignments table using a more specific CSS selector
+    # 6. Check for the assignments table using XPATH
     try:
-        # Use the table within the #divAssignments container to avoid conflicts if multiple tables exist
         assignment_table = WebDriverWait(driver, 60).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "div#divAssignments table#DataTables_Table_1"))
+            EC.visibility_of_element_located((By.XPATH, "//table[@id='DataTables_Table_1']"))
         )
         rows = assignment_table.find_elements(By.CSS_SELECTOR, "tbody tr")
         print("Found", len(rows), "rows in the assignment table.")
@@ -177,7 +176,7 @@ if "Successful" in login_status:
     except Exception as e:
         error_message = "❌ Error checking assignments: " + str(e)
         print(error_message)
-        # Optional: Debug by printing a snippet of the page source
+        # Debug: Print a snippet of the page source to help diagnose the issue
         page_snippet = driver.page_source[:1000]
         print("Page source snippet:", page_snippet)
         send_telegram_message(error_message)
