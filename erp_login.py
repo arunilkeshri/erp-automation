@@ -29,8 +29,8 @@ chrome_options.add_argument("--disable-blink-features=AutomationControlled")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-gpu")
-# For visual debugging, you can comment out the headless option:
-chrome_options.add_argument("--headless")
+# For debugging, try commenting out headless so you can see the browser:
+chrome_options.add_argument("--headless")  # Comment this out to run in normal mode
 chrome_options.add_argument("--remote-debugging-port=9222")
 
 driver = uc.Chrome(options=chrome_options, version_main=133)
@@ -39,7 +39,7 @@ time.sleep(3)  # Allow page to load
 
 # ========= LOGIN PROCESS =========
 try:
-    # Locate username field (try both IDs)
+    # Locate username field (try both possible IDs)
     try:
         username_field = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.ID, "txt_username"))
@@ -48,7 +48,7 @@ try:
         username_field = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.ID, "txtusername"))
         )
-    # Locate password field (try both IDs)
+    # Locate password field (try both possible IDs)
     try:
         password_field = driver.find_element(By.ID, "txt_password")
     except Exception:
@@ -150,13 +150,14 @@ if "Successful" in login_status:
     except Exception as e:
         print("❌ Bell icon not found:", e)
     
-    # Scroll so that the "Assignments List" header and its container become visible
+    # Scroll so that the "Assignments List" header is visible
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight/2);")
     time.sleep(3)
     
-    # Locate the assignments table using the stable container "divAssignments"
+    # Locate the assignments table from within the stable container "divAssignments"
     try:
-        assignment_table = WebDriverWait(driver, 60).until(
+        # Using XPath that gets the first table inside the "divAssignments" container.
+        assignment_table = WebDriverWait(driver, 90).until(
             EC.presence_of_element_located((By.XPATH, "//div[@id='divAssignments']//table"))
         )
         rows = assignment_table.find_elements(By.CSS_SELECTOR, "tbody tr")
@@ -173,6 +174,7 @@ if "Successful" in login_status:
     except Exception as e:
         error_message = "❌ Error checking assignments: " + str(e)
         print(error_message)
+        # Print a snippet of the page source for debugging
         page_snippet = driver.page_source[:2000]
         print("Page source snippet:\n", page_snippet)
         send_telegram_message(error_message)
