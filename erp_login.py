@@ -8,39 +8,38 @@ from PIL import Image, ImageEnhance, ImageFilter
 import time
 import requests
 
-# ========== Read Credentials from Environment Variables ==========
+# ========= Read Credentials =========
 ROLL_NUMBER = os.environ.get("ROLL_NUMBER")
 PASSWORD = os.environ.get("PASSWORD")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 if not all([ROLL_NUMBER, PASSWORD, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID]):
-    raise Exception("Missing required environment variables. Ensure ROLL_NUMBER, PASSWORD, TELEGRAM_BOT_TOKEN, and TELEGRAM_CHAT_ID are set.")
+    raise Exception("Missing required environment variables.")
 
-# ========== ERP URL ==========
+# ========= ERP URL =========
 ERP_URL = "https://jecrc.mastersofterp.in/iitmsv4eGq0RuNHb0G5WbhLmTKLmTO7YBcJ4RHuXxCNPvuIw=?enc=EGbCGWnlHNJ/WdgJnKH8DA=="
 
-# ========== Set Tesseract Path ==========
+# ========= Set Tesseract Path =========
 pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"  # Adjust if needed
 
-# ========== Setup Chrome Driver with Extra Options ==========
+# ========= Setup Chrome Driver =========
 chrome_options = uc.ChromeOptions()
 chrome_options.add_argument("--disable-blink-features=AutomationControlled")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-gpu")
-# For visual debugging, comment out the headless option:
+# Visual debugging: agar dekhna ho, to headless mode comment out karein
 chrome_options.add_argument("--headless")
 chrome_options.add_argument("--remote-debugging-port=9222")
 
-# Force undetected_chromedriver to use ChromeDriver for Chrome version 133
 driver = uc.Chrome(options=chrome_options, version_main=133)
 driver.get(ERP_URL)
-time.sleep(3)  # Allow page to load
+time.sleep(3)
 
-# ========== LOGIN PROCESS ==========
+# ========= LOGIN PROCESS =========
 try:
-    # Locate username field (try both possible IDs)
+    # Username field
     try:
         username_field = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.ID, "txt_username"))
@@ -49,7 +48,7 @@ try:
         username_field = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.ID, "txtusername"))
         )
-    # Locate password field (try both possible IDs)
+    # Password field
     try:
         password_field = driver.find_element(By.ID, "txt_password")
     except Exception:
@@ -103,7 +102,7 @@ def send_telegram_message(message):
 
 send_telegram_message(login_status)
 
-# ========== POST-LOGIN ACTIONS ==========
+# ========= POST-LOGIN ACTIONS =========
 if "Successful" in login_status:
     # Close notice popup if present
     try:
@@ -149,15 +148,15 @@ if "Successful" in login_status:
     except Exception as e:
         print("❌ Bell icon not found:", e)
     
-    # Scroll gradually to ensure the table loads
+    # Scroll down gradually
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     time.sleep(5)
     
-    # Locate the assignment table using the container's ID
+    # Try to locate table using container div "ctl00_ContentPlaceHolder1_pnlAssignment"
     try:
         assignment_table = WebDriverWait(driver, 90).until(
             EC.presence_of_element_located(
-                (By.XPATH, "//div[@id='divAssignments']//table[@id='DataTables_Table_0']")
+                (By.XPATH, "//div[@id='ctl00_ContentPlaceHolder1_pnlAssignment']//table[@id='DataTables_Table_0']")
             )
         )
         rows = assignment_table.find_elements(By.CSS_SELECTOR, "tbody tr")
@@ -178,7 +177,7 @@ if "Successful" in login_status:
         print("Page source snippet:\n", page_snippet)
         send_telegram_message(error_message)
 
-# ========== FINISH ==========
+# ========= FINISH =========
 try:
     input("Press Enter to exit and close the browser...")
 except EOFError:
