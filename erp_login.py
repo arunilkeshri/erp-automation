@@ -157,11 +157,11 @@ if "Successful" in login_status:
     driver.execute_script("window.scrollBy(0, 600);")
     time.sleep(5)
 
-    # 6. Check for the assignments table using the ID "DataTables_Table_1"
+    # 6. Check for the assignments table using the correct ID "DataTables_Table_0"
     try:
         # Wait for the table to be present
         assignment_table = WebDriverWait(driver, 60).until(
-            EC.presence_of_element_located((By.ID, "DataTables_Table_1"))
+            EC.presence_of_element_located((By.ID, "DataTables_Table_0"))
         )
         rows = assignment_table.find_elements(By.CSS_SELECTOR, "tbody tr")
         print("Found", len(rows), "rows in the assignment table.")
