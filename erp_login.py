@@ -107,26 +107,6 @@ def send_telegram_message(message):
 
 send_telegram_message(login_status)
 
-# ===== Helper function to find table inside iframes =====
-def find_table_in_frames():
-    # Pehle main DOM mein try karein
-    try:
-        table = driver.find_element(By.XPATH, "//table[@id='DataTables_Table_1']")
-        return table
-    except Exception:
-        pass
-
-    # Agar main DOM mein nahin mila, to saare iframes ko check karein
-    frames = driver.find_elements(By.TAG_NAME, "iframe")
-    for frame in frames:
-        try:
-            driver.switch_to.frame(frame)
-            table = driver.find_element(By.XPATH, "//table[@id='DataTables_Table_1']")
-            return table
-        except Exception:
-            driver.switch_to.parent_frame()
-    return None
-
 # ========== POST-LOGIN ACTIONS ==========
 if "Successful" in login_status:
     # 1. Close Notice/News Popup if present
@@ -177,14 +157,12 @@ if "Successful" in login_status:
     driver.execute_script("window.scrollBy(0, 600);")
     time.sleep(5)
 
-    # 6. Try to find the assignment table (including inside iframes)
+    # 6. Locate the assignment table using the provided ID DataTables_Table_0
     try:
-        assignment_table = find_table_in_frames()
-        if not assignment_table:
-            raise Exception("Assignment table not found in main DOM or any iframe.")
-
-        # Agar iframe se switch kiya ho toh wapas main DOM ya us iframe par hi rehte hain.
-        # (Aap chahein to yahan se assignment_table par kaam kar sakte hain)
+        # Using XPath as provided
+        assignment_table = WebDriverWait(driver, 60).until(
+            EC.visibility_of_element_located((By.XPATH, "//*[@id='DataTables_Table_0']"))
+        )
         rows = assignment_table.find_elements(By.CSS_SELECTOR, "tbody tr")
         print("Found", len(rows), "rows in the assignment table.")
         if not rows or len(rows) == 0:
