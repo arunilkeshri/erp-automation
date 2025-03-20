@@ -29,7 +29,7 @@ chrome_options.add_argument("--disable-blink-features=AutomationControlled")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-gpu")
-# Agar aap manually dekhna chahte hain to niche ki line ko comment out karein
+# Agar manually dekhna ho toh headless mode ko comment out karein:
 chrome_options.add_argument("--headless")
 chrome_options.add_argument("--remote-debugging-port=9222")
 
@@ -155,13 +155,14 @@ if "Successful" in login_status:
         print("❌ Bell icon not found:", e)
 
     # 5. Scroll down to reveal the assignment table
-    driver.execute_script("window.scrollBy(0, 600);")
+    # Puri page ko scroll karne ke liye yeh script try karein
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     time.sleep(5)
 
     # 6. Locate the assignment table using XPath with ID DataTables_Table_0
     try:
         assignment_table = WebDriverWait(driver, 90).until(
-            EC.visibility_of_element_located((By.XPATH, "//*[@id='DataTables_Table_0']"))
+            EC.presence_of_element_located((By.XPATH, "//*[@id='DataTables_Table_0']"))
         )
         rows = assignment_table.find_elements(By.CSS_SELECTOR, "tbody tr")
         print("Found", len(rows), "rows in the assignment table.")
@@ -177,7 +178,7 @@ if "Successful" in login_status:
     except Exception as e:
         error_message = "❌ Error checking assignments: " + str(e)
         print(error_message)
-        # Debug: Print a larger snippet of the page source to diagnose the issue
+        # Debug: Print a larger snippet of the page source
         page_snippet = driver.page_source[:2000]
         print("Page source snippet:\n", page_snippet)
         send_telegram_message(error_message)
