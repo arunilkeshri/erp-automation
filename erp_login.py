@@ -29,7 +29,7 @@ chrome_options.add_argument("--disable-blink-features=AutomationControlled")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-gpu")
-# For visual debugging, comment out headless if you want to see the browser window.
+# For visual debugging, comment out headless if you wish to see the browser window
 chrome_options.add_argument("--headless")
 chrome_options.add_argument("--remote-debugging-port=9222")
 
@@ -39,7 +39,7 @@ time.sleep(3)  # Allow page to load
 
 # ========= LOGIN PROCESS =========
 try:
-    # Locate username field (try both IDs)
+    # Locate username field (try both possible IDs)
     try:
         username_field = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.ID, "txt_username"))
@@ -48,7 +48,7 @@ try:
         username_field = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.ID, "txtusername"))
         )
-    # Locate password field (try both IDs)
+    # Locate password field (try both possible IDs)
     try:
         password_field = driver.find_element(By.ID, "txt_password")
     except Exception:
@@ -139,7 +139,7 @@ if "Successful" in login_status:
     except Exception as e:
         print("❌ Transactions option not found:", e)
     
-    # Click bell icon (notification) once to reveal the assignments section
+    # Click bell icon (notification) once to reveal the assignments section.
     try:
         bell_icon = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.ID, "ctl00_ContentPlaceHolder1_imgNotify"))
@@ -154,8 +154,9 @@ if "Successful" in login_status:
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight/2);")
     time.sleep(3)
     
-    # Locate the assignments table relative to the "Assignments List" header within the stable container
+    # Locate the assignment table within the stable container "divAssignments"
     try:
+        # This relative XPath finds the "Assignments List" header then selects the first table after it.
         assignment_table = WebDriverWait(driver, 60).until(
             EC.presence_of_element_located(
                 (By.XPATH, "//div[@id='divAssignments']//h5[normalize-space(text())='Assignments List']/following::table[1]")
