@@ -157,11 +157,10 @@ if "Successful" in login_status:
     driver.execute_script("window.scrollBy(0, 600);")
     time.sleep(5)
 
-    # 6. Check for the assignments table using the updated ID "DataTables_Table_0"
+    # 6. Check for the assignments table using the updated ID "DataTables_Table_1"
     try:
-        tables = driver.find_elements(By.ID, "DataTables_Table_0")
+        tables = driver.find_elements(By.ID, "DataTables_Table_1")
         if not tables:
-            # If table is not found, assume no assignments.
             assignment_message = "ℹ You don't have any Assignment to upload."
         else:
             assignment_table = tables[0]
