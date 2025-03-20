@@ -137,7 +137,7 @@ if "Successful" in login_status:
     except Exception as e:
         print("❌ Transactions option not found:", e)
     
-    # Click bell icon (notification)
+    # Click bell icon (notification) once
     try:
         bell_icon = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.ID, "ctl00_ContentPlaceHolder1_imgNotify"))
@@ -152,10 +152,10 @@ if "Successful" in login_status:
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight/2);")
     time.sleep(3)
     
-    # Now locate the assignment table with ID "DataTables_Table_2"
+    # Locate the assignment table using the relative XPath (ignoring dynamic ID)
     try:
         assignment_table = WebDriverWait(driver, 60).until(
-            EC.presence_of_element_located((By.XPATH, "//*[@id='DataTables_Table_2']"))
+            EC.presence_of_element_located((By.XPATH, "//h5[contains(text(),'Assignments List')]/following::table[1]"))
         )
         rows = assignment_table.find_elements(By.CSS_SELECTOR, "tbody tr")
         print("Found", len(rows), "rows in the assignment table.")
