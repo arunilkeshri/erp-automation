@@ -72,7 +72,7 @@ try:
         img = img.filter(ImageFilter.MedianFilter())  # Reduce noise
         enhancer = ImageEnhance.Contrast(img)
         img = enhancer.enhance(2)  # Increase contrast
-        img.save("processed_captcha.png")  # Optional: save processed image for debugging
+        img.save("processed_captcha.png")  # Optional: save for debugging
         return pytesseract.image_to_string(img, config="--psm 6").strip()
 
     captcha_text = process_captcha("captcha.png")
@@ -157,22 +157,20 @@ if "Successful" in login_status:
     driver.execute_script("window.scrollBy(0, 600);")
     time.sleep(5)
 
-    # 6. Check for the assignments table using the updated ID "DataTables_Table_1"
+    # 6. Check for the assignments table using the updated XPath within the assignments panel
     try:
-        tables = driver.find_elements(By.ID, "DataTables_Table_1")
-        if not tables:
+        assignment_table = WebDriverWait(driver, 60).until(
+            EC.visibility_of_element_located((By.XPATH, "//div[@id='ctl00_ContentPlaceHolder1_pnlAssignment']//table[@id='DataTables_Table_1']"))
+        )
+        rows = assignment_table.find_elements(By.CSS_SELECTOR, "tbody tr")
+        print("Found", len(rows), "rows in the assignment table.")
+        if len(rows) == 0:
+            assignment_message = "ℹ You don't have any Assignment to upload."
+        elif len(rows) == 1 and "you don't have any assignment" in rows[0].text.lower():
             assignment_message = "ℹ You don't have any Assignment to upload."
         else:
-            assignment_table = tables[0]
-            rows = assignment_table.find_elements(By.CSS_SELECTOR, "tbody tr")
-            print("Found", len(rows), "rows in the assignment table.")
-            if len(rows) == 0:
-                assignment_message = "ℹ You don't have any Assignment to upload."
-            elif len(rows) == 1 and "you don't have any assignment" in rows[0].text.lower():
-                assignment_message = "ℹ You don't have any Assignment to upload."
-            else:
-                row_texts = [" ".join(row.text.split()) for row in rows if row.text.strip()]
-                assignment_message = "📢 You have assignments to upload:\n" + "\n".join(row_texts)
+            row_texts = [" ".join(row.text.split()) for row in rows if row.text.strip()]
+            assignment_message = "📢 You have assignments to upload:\n" + "\n".join(row_texts)
         print("Assignment Check:", assignment_message)
         send_telegram_message(assignment_message)
     except Exception as e:
