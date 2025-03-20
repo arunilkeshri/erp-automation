@@ -8,50 +8,51 @@ from PIL import Image, ImageEnhance, ImageFilter
 import time
 import requests
 
-# ========= Read Credentials =========
+# ========== Read Credentials from Environment Variables ==========
 ROLL_NUMBER = os.environ.get("ROLL_NUMBER")
 PASSWORD = os.environ.get("PASSWORD")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 if not all([ROLL_NUMBER, PASSWORD, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID]):
-    raise Exception("Missing required environment variables.")
+    raise Exception("Missing required environment variables. Ensure ROLL_NUMBER, PASSWORD, TELEGRAM_BOT_TOKEN, and TELEGRAM_CHAT_ID are set.")
 
-# ========= ERP URL =========
+# ========== ERP URL ==========
 ERP_URL = "https://jecrc.mastersofterp.in/iitmsv4eGq0RuNHb0G5WbhLmTKLmTO7YBcJ4RHuXxCNPvuIw=?enc=EGbCGWnlHNJ/WdgJnKH8DA=="
 
-# ========= Tesseract Path =========
-pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
+# ========== Set Tesseract Path ==========
+pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"  # Adjust if needed
 
-# ========= Setup Chrome Driver =========
+# ========== Setup Chrome Driver with Extra Options ==========
 chrome_options = uc.ChromeOptions()
 chrome_options.add_argument("--disable-blink-features=AutomationControlled")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-gpu")
-# Agar aap visual debug karna chahte hain toh headless mode ko comment out karein
+# Agar aap visually dekhna chahte hain to headless mode ko comment out karein
 chrome_options.add_argument("--headless")
 chrome_options.add_argument("--remote-debugging-port=9222")
 
+# Force undetected_chromedriver to use ChromeDriver for Chrome version 133
 driver = uc.Chrome(options=chrome_options, version_main=133)
 driver.get(ERP_URL)
-time.sleep(3)
+time.sleep(3)  # Allow page to load
 
-# ========= LOGIN PROCESS =========
+# ========== LOGIN PROCESS ==========
 try:
-    # Username field
+    # Locate username field (try both IDs)
     try:
         username_field = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.ID, "txt_username"))
         )
-    except:
+    except Exception:
         username_field = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.ID, "txtusername"))
         )
-    # Password field
+    # Locate password field (try both IDs)
     try:
         password_field = driver.find_element(By.ID, "txt_password")
-    except:
+    except Exception:
         password_field = driver.find_element(By.ID, "txtpassword")
     print("✅ Username & Password fields found.")
     
@@ -83,7 +84,6 @@ try:
     print("🔄 Attempting Login...")
     time.sleep(5)
     
-    # Check login status
     current_url = driver.current_url
     if "login" in current_url.lower():
         login_status = "❌ ERP Login Failed!"
@@ -103,9 +103,9 @@ def send_telegram_message(message):
 
 send_telegram_message(login_status)
 
-# ========= POST-LOGIN ACTIONS =========
+# ========== POST-LOGIN ACTIONS ==========
 if "Successful" in login_status:
-    # Close notice popup, if any
+    # Close notice popup if present
     try:
         notice_modal = WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.ID, "noticemodal"))
@@ -149,21 +149,21 @@ if "Successful" in login_status:
     except Exception as e:
         print("❌ Bell icon not found:", e)
     
-    # Incremental scrolling to ensure table loads
-    scroll_pause_time = 2
-    max_scrolls = 10
-    found_table = False
-    for i in range(max_scrolls):
-        driver.execute_script("window.scrollBy(0, 500);")
-        time.sleep(scroll_pause_time)
-        try:
-            assignment_table = driver.find_element(By.XPATH, "//*[@id='DataTables_Table_0']")
-            found_table = True
-            break
-        except Exception:
-            continue
+    # Scroll down gradually and try to locate the table relative to "Assignments List"
+    assignment_table = None
+    try:
+        assignment_table = WebDriverWait(driver, 90).until(
+            EC.presence_of_element_located(
+                (
+                    By.XPATH,
+                    "//div[contains(@class, 'sub-heading') and .//h5[contains(text(),'Assignments List')]]//following::table[1]"
+                )
+            )
+        )
+    except Exception as e:
+        print("❌ Assignment table not found using relative XPath:", e)
     
-    if not found_table:
+    if not assignment_table:
         error_message = "❌ Assignment table not found after scrolling."
         print(error_message)
         send_telegram_message(error_message)
@@ -187,7 +187,7 @@ if "Successful" in login_status:
             print("Page source snippet:\n", page_snippet)
             send_telegram_message(error_message)
 
-# ========= FINISH =========
+# ========== FINISH ==========
 try:
     input("Press Enter to exit and close the browser...")
 except EOFError:
