@@ -8,98 +8,93 @@ from PIL import Image, ImageEnhance, ImageFilter
 import time
 import requests
 
-# ========== Read Credentials from Environment Variables ==========
+# ========= Read Credentials =========
 ROLL_NUMBER = os.environ.get("ROLL_NUMBER")
 PASSWORD = os.environ.get("PASSWORD")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 if not all([ROLL_NUMBER, PASSWORD, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID]):
-    raise Exception("Missing required environment variables. Ensure ROLL_NUMBER, PASSWORD, TELEGRAM_BOT_TOKEN, and TELEGRAM_CHAT_ID are set.")
+    raise Exception("Missing required environment variables.")
 
-# ========== ERP URL ==========
+# ========= ERP URL =========
 ERP_URL = "https://jecrc.mastersofterp.in/iitmsv4eGq0RuNHb0G5WbhLmTKLmTO7YBcJ4RHuXxCNPvuIw=?enc=EGbCGWnlHNJ/WdgJnKH8DA=="
 
-# ========== Set Tesseract Path ==========
-pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"  # Adjust if needed
+# ========= Tesseract Path =========
+pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
 
-# ========== Setup Chrome Driver with Extra Options ==========
+# ========= Setup Chrome Driver =========
 chrome_options = uc.ChromeOptions()
 chrome_options.add_argument("--disable-blink-features=AutomationControlled")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-gpu")
-# Agar manually dekhna ho toh headless mode ko comment out karein:
+# Agar aap visual debug karna chahte hain toh headless mode ko comment out karein
 chrome_options.add_argument("--headless")
 chrome_options.add_argument("--remote-debugging-port=9222")
 
-# Force undetected_chromedriver to use ChromeDriver for Chrome version 133
 driver = uc.Chrome(options=chrome_options, version_main=133)
 driver.get(ERP_URL)
-time.sleep(3)  # Allow page to load
+time.sleep(3)
 
-# ========== LOGIN PROCESS ==========
+# ========= LOGIN PROCESS =========
 try:
-    # Locate the username field (try both possible IDs)
+    # Username field
     try:
         username_field = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.ID, "txt_username"))
         )
-    except Exception:
+    except:
         username_field = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.ID, "txtusername"))
         )
-
-    # Locate the password field (try both possible IDs)
+    # Password field
     try:
         password_field = driver.find_element(By.ID, "txt_password")
-    except Exception:
+    except:
         password_field = driver.find_element(By.ID, "txtpassword")
-
     print("✅ Username & Password fields found.")
-
-    # Enter credentials
+    
     username_field.send_keys(ROLL_NUMBER)
     password_field.send_keys(PASSWORD)
-
-    # ------------------- CAPTCHA HANDLING -------------------
+    
+    # CAPTCHA Handling
     captcha_element = WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.ID, "captchaCanvas"))
     )
     captcha_element.screenshot("captcha.png")
-
+    
     def process_captcha(image_path):
-        img = Image.open(image_path).convert("L")  # Convert to grayscale
-        img = img.filter(ImageFilter.MedianFilter())  # Reduce noise
+        img = Image.open(image_path).convert("L")
+        img = img.filter(ImageFilter.MedianFilter())
         enhancer = ImageEnhance.Contrast(img)
-        img = enhancer.enhance(2)  # Increase contrast
-        img.save("processed_captcha.png")  # Optional: save processed image for debugging
+        img = enhancer.enhance(2)
+        img.save("processed_captcha.png")
         return pytesseract.image_to_string(img, config="--psm 6").strip()
-
+    
     captcha_text = process_captcha("captcha.png")
     print("🔍 Captcha Text:", captcha_text)
-
+    
     captcha_input = driver.find_element(By.ID, "txtcaptcha")
     captcha_input.send_keys(captcha_text)
-
+    
     login_button = driver.find_element(By.ID, "btnLogin")
     login_button.click()
     print("🔄 Attempting Login...")
     time.sleep(5)
-
-    # ========== CHECK LOGIN STATUS ==========
+    
+    # Check login status
     current_url = driver.current_url
     if "login" in current_url.lower():
         login_status = "❌ ERP Login Failed!"
     else:
         login_status = "✅ ERP Login Successful!"
     print(login_status)
-
+    
 except Exception as e:
     login_status = "❌ Error during login: " + str(e)
     print(login_status)
 
-# ========== SEND TELEGRAM NOTIFICATION (Login Status) ==========
 def send_telegram_message(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {"chat_id": TELEGRAM_CHAT_ID, "text": message}
@@ -108,9 +103,9 @@ def send_telegram_message(message):
 
 send_telegram_message(login_status)
 
-# ========== POST-LOGIN ACTIONS ==========
+# ========= POST-LOGIN ACTIONS =========
 if "Successful" in login_status:
-    # 1. Close Notice/News Popup if present
+    # Close notice popup, if any
     try:
         notice_modal = WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.ID, "noticemodal"))
@@ -120,8 +115,8 @@ if "Successful" in login_status:
         print("✅ Notice popup closed.")
     except Exception as e:
         print("ℹ No notice popup found or already closed.")
-
-    # 2. Click the LMS button
+    
+    # Click LMS button
     try:
         lms_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.XPATH, "//a[contains(@onclick, \"__doPostBack('ctl00$mainMenu','6')\") and contains(text(),'LMS')]"))
@@ -131,8 +126,8 @@ if "Successful" in login_status:
         time.sleep(2)
     except Exception as e:
         print("❌ LMS button not found:", e)
-
-    # 3. Click the Transactions option from the LMS dropdown
+    
+    # Click Transactions option
     try:
         transaction_option = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.XPATH, "//a[contains(text(),'Transactions')]"))
@@ -142,8 +137,8 @@ if "Successful" in login_status:
         time.sleep(3)
     except Exception as e:
         print("❌ Transactions option not found:", e)
-
-    # 4. Click the bell icon (notification icon) on the right
+    
+    # Click bell icon (notification)
     try:
         bell_icon = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.ID, "ctl00_ContentPlaceHolder1_imgNotify"))
@@ -153,37 +148,46 @@ if "Successful" in login_status:
         time.sleep(3)
     except Exception as e:
         print("❌ Bell icon not found:", e)
-
-    # 5. Scroll down to reveal the assignment table
-    # Puri page ko scroll karne ke liye yeh script try karein
-    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-    time.sleep(5)
-
-    # 6. Locate the assignment table using XPath with ID DataTables_Table_0
-    try:
-        assignment_table = WebDriverWait(driver, 90).until(
-            EC.presence_of_element_located((By.XPATH, "//*[@id='DataTables_Table_0']"))
-        )
-        rows = assignment_table.find_elements(By.CSS_SELECTOR, "tbody tr")
-        print("Found", len(rows), "rows in the assignment table.")
-        if not rows or len(rows) == 0:
-            assignment_message = "ℹ You don't have any Assignment to upload."
-        elif len(rows) == 1 and "you don't have any assignment" in rows[0].text.lower():
-            assignment_message = "ℹ You don't have any Assignment to upload."
-        else:
-            row_texts = [" ".join(row.text.split()) for row in rows if row.text.strip()]
-            assignment_message = "📢 You have assignments to upload:\n" + "\n".join(row_texts)
-        print("Assignment Check:", assignment_message)
-        send_telegram_message(assignment_message)
-    except Exception as e:
-        error_message = "❌ Error checking assignments: " + str(e)
+    
+    # Incremental scrolling to ensure table loads
+    scroll_pause_time = 2
+    max_scrolls = 10
+    found_table = False
+    for i in range(max_scrolls):
+        driver.execute_script("window.scrollBy(0, 500);")
+        time.sleep(scroll_pause_time)
+        try:
+            assignment_table = driver.find_element(By.XPATH, "//*[@id='DataTables_Table_0']")
+            found_table = True
+            break
+        except Exception:
+            continue
+    
+    if not found_table:
+        error_message = "❌ Assignment table not found after scrolling."
         print(error_message)
-        # Debug: Print a larger snippet of the page source
-        page_snippet = driver.page_source[:2000]
-        print("Page source snippet:\n", page_snippet)
         send_telegram_message(error_message)
+    else:
+        try:
+            rows = assignment_table.find_elements(By.CSS_SELECTOR, "tbody tr")
+            print("Found", len(rows), "rows in the assignment table.")
+            if not rows or len(rows) == 0:
+                assignment_message = "ℹ You don't have any Assignment to upload."
+            elif len(rows) == 1 and "you don't have any assignment" in rows[0].text.lower():
+                assignment_message = "ℹ You don't have any Assignment to upload."
+            else:
+                row_texts = [" ".join(row.text.split()) for row in rows if row.text.strip()]
+                assignment_message = "📢 You have assignments to upload:\n" + "\n".join(row_texts)
+            print("Assignment Check:", assignment_message)
+            send_telegram_message(assignment_message)
+        except Exception as e:
+            error_message = "❌ Error checking assignments: " + str(e)
+            print(error_message)
+            page_snippet = driver.page_source[:2000]
+            print("Page source snippet:\n", page_snippet)
+            send_telegram_message(error_message)
 
-# ========== FINISH ==========
+# ========= FINISH =========
 try:
     input("Press Enter to exit and close the browser...")
 except EOFError:
