@@ -1,7 +1,6 @@
 import os
 import time
 import requests
-import tempfile
 import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -19,10 +18,9 @@ ERP_URL = os.environ.get("ERP_URL")
 if not all([ROLL_NUMBER, PASSWORD, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, ERP_URL]):
     raise Exception("Missing one or more required environment variables.")
 
-# Set Tesseract path – on GitHub Actions Linux runner it’s usually /usr/bin/tesseract
+# Set Tesseract path – on Linux, it's typically /usr/bin/tesseract
 pytesseract.pytesseract.tesseract_cmd = os.environ.get("TESSERACT_PATH", "/usr/bin/tesseract")
 
-# Telegram function to send messages
 def send_telegram_message(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {"chat_id": TELEGRAM_CHAT_ID, "text": message}
@@ -36,7 +34,7 @@ chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--remote-debugging-port=9222")
-chrome_options.add_argument("--headless")  # Running headless in CI
+chrome_options.add_argument("--headless")  # Headless mode for CI
 
 driver = uc.Chrome(options=chrome_options, version_main=133)
 driver.get(ERP_URL)
@@ -45,7 +43,7 @@ time.sleep(5)  # Allow extra time for page load
 # ----- LOGIN PROCESS -----
 login_message = ""
 try:
-    # Locate username field (try both possible IDs)
+    # Locate username field (try both IDs)
     try:
         username_field = WebDriverWait(driver, 30).until(
             EC.presence_of_element_located((By.ID, "txt_username"))
@@ -55,7 +53,7 @@ try:
             EC.presence_of_element_located((By.ID, "txtusername"))
         )
     
-    # Locate password field (try both possible IDs)
+    # Locate password field (try both IDs)
     try:
         password_field = driver.find_element(By.ID, "txt_password")
     except Exception:
@@ -64,8 +62,8 @@ try:
     username_field.send_keys(ROLL_NUMBER)
     password_field.send_keys(PASSWORD)
     
-    # CAPTCHA handling: Save screenshot to a temporary file in /tmp
-    captcha_path = tempfile.mktemp(suffix=".png")
+    # CAPTCHA handling: Use a fixed writable path
+    captcha_path = "/tmp/captcha.png"
     print("Using temporary captcha file:", captcha_path)
     
     captcha_element = WebDriverWait(driver, 15).until(
@@ -88,7 +86,7 @@ try:
     
     login_button = driver.find_element(By.ID, "btnLogin")
     login_button.click()
-    time.sleep(7)
+    time.sleep(7)  # Wait for login process
     
     current_url = driver.current_url
     if "login" in current_url.lower():
