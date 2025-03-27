@@ -18,7 +18,8 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install Tesseract
-        run: sudo apt-get update && sudo apt-get install -y tesseract-ocr
+        run: |
+          sudo apt-get update && sudo apt-get install -y tesseract-ocr
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -41,7 +42,7 @@ jobs:
         run: python erp_automation.py
 
       - name: Upload Page Source Artifact
-        uses: actions/upload-artifact@v3.0.2
+        uses: actions/upload-artifact@v3
         with:
           name: page_source
           path: /tmp/page_source.html
