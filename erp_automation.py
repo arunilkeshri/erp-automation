@@ -38,8 +38,11 @@ chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--remote-debugging-port=9222")
+# For debugging, aap headless mode temporarily disable kar sakte hain:
 chrome_options.add_argument("--headless")
 chrome_options.add_argument("--window-size=1920,1080")
+# Add custom user agent
+chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36")
 
 driver = uc.Chrome(options=chrome_options, version_main=133)
 driver.get(ERP_URL)
@@ -138,6 +141,12 @@ try:
 except Exception:
     print("ℹ Error clicking 'LMS' option.")
 
+# ----- Debug: Check if Transactions element exists using JS -----
+transactions_exists = driver.execute_script(
+    "return document.querySelector('[id=\"ctl00_mainMenu:submenu:9\"] li:nth-child(1) > a') !== null"
+)
+print("Debug - Transactions element exists:", transactions_exists)
+
 # ----- Click 'Transactions' Option from Submenu -----
 try:
     transactions = WebDriverWait(driver, 45).until(
@@ -156,6 +165,12 @@ try:
     print("✅ 'Select Course' heading found:", select_course_heading.text)
 except Exception:
     print("ℹ 'Select Course' heading not found.")
+
+# ----- Debug: Check if Bell icon exists using JS -----
+bell_exists = driver.execute_script(
+    "return document.querySelector('#ctl00_ContentPlaceHolder1_imgNotify') !== null"
+)
+print("Debug - Bell icon exists:", bell_exists)
 
 # ----- Click Bell Icon Once -----
 try:
