@@ -42,7 +42,7 @@ jobs:
         run: python erp_automation.py
 
       - name: Upload Page Source Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3.0.2
         with:
           name: page_source
           path: /tmp/page_source.html
