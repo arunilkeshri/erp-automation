@@ -47,7 +47,7 @@ if os.environ.get("CI"):
     chrome_options.add_argument("--headless")
     chrome_options.binary_location = "/usr/bin/chromium-browser"
 else:
-    # Local testing with visible browser
+    # Local testing with visible browser: headless mode disabled.
     pass
 
 driver = uc.Chrome(options=chrome_options, version_main=133)
@@ -57,15 +57,17 @@ time.sleep(5)
 # ----- LOGIN PROCESS -----
 login_message = ""
 try:
+    # Locate username field (try alternative IDs)
     try:
-        username_field = WebDriverWait(driver, 45).until(
+        username_field = WebDriverWait(driver, 60).until(
             EC.presence_of_element_located((By.ID, "txt_username"))
         )
     except Exception:
-        username_field = WebDriverWait(driver, 45).until(
+        username_field = WebDriverWait(driver, 60).until(
             EC.presence_of_element_located((By.ID, "txtusername"))
         )
     
+    # Locate password field
     try:
         password_field = driver.find_element(By.ID, "txt_password")
     except Exception:
@@ -74,10 +76,11 @@ try:
     username_field.send_keys(ROLL_NUMBER)
     password_field.send_keys(PASSWORD)
     
+    # CAPTCHA handling: save screenshot to /tmp folder
     captcha_path = "/tmp/captcha.png"
     print("Using temporary captcha file:", captcha_path)
     
-    captcha_element = WebDriverWait(driver, 30).until(
+    captcha_element = WebDriverWait(driver, 60).until(
         EC.presence_of_element_located((By.ID, "captchaCanvas"))
     )
     
@@ -118,13 +121,15 @@ except Exception as e:
     login_message = "❌ Error during login: " + str(e)
     print(login_message)
 
+# Save page source for debugging
 page_source_path = "/tmp/page_source.html"
 with open(page_source_path, "w") as f:
     f.write(driver.page_source)
 print("Page source saved to:", page_source_path)
 
+# ----- Close Notice/News Modal if Present -----
 try:
-    close_button = WebDriverWait(driver, 30).until(
+    close_button = WebDriverWait(driver, 60).until(
         EC.element_to_be_clickable((By.XPATH, "//div[@class='modal-header']//button[@class='close']"))
     )
     driver.execute_script("arguments[0].click();", close_button)
@@ -132,8 +137,9 @@ try:
 except Exception:
     print("ℹ No Notice/News modal found or error closing modal.")
 
+# ----- Click 'LMS' Option -----
 try:
-    lms = WebDriverWait(driver, 45).until(
+    lms = WebDriverWait(driver, 60).until(
         EC.element_to_be_clickable((By.CSS_SELECTOR, "#ctl00_mainMenu > ul > li:nth-child(3) > a"))
     )
     driver.execute_script("arguments[0].click();", lms)
@@ -141,37 +147,41 @@ try:
 except Exception:
     print("ℹ Error clicking 'LMS' option.")
 
+# ----- Debug: Check if Transactions element exists using JS -----
 transactions_exists = driver.execute_script(
     "return document.querySelector('[id=\"ctl00_mainMenu:submenu:9\"] li:nth-child(1) > a') !== null"
 )
 print("Debug - Transactions element exists:", transactions_exists)
 
+# ----- Click 'Transactions' Option from Submenu -----
 try:
-    transactions = WebDriverWait(driver, 45).until(
+    transactions = WebDriverWait(driver, 60).until(
         EC.element_to_be_clickable((By.CSS_SELECTOR, "[id='ctl00_mainMenu:submenu:9'] li:nth-child(1) > a"))
     )
-    # Use ActionChains to move to the element and click
-    actions = ActionChains(driver)
-    actions.move_to_element(transactions).click().perform()
+    # Use ActionChains to click the element
+    ActionChains(driver).move_to_element(transactions).click().perform()
     print("✅ 'Transactions' option clicked using ActionChains.")
 except Exception:
     print("ℹ Transactions option not found or not clickable.")
 
+# ----- Wait for "Select Course" Heading -----
 try:
-    select_course_heading = WebDriverWait(driver, 45).until(
+    select_course_heading = WebDriverWait(driver, 60).until(
         EC.presence_of_element_located((By.XPATH, "//*[contains(text(),'Select Course')]"))
     )
     print("✅ 'Select Course' heading found:", select_course_heading.text)
 except Exception:
     print("ℹ 'Select Course' heading not found.")
 
+# ----- Debug: Check if Bell icon exists using JS -----
 bell_exists = driver.execute_script(
     "return document.querySelector('#ctl00_ContentPlaceHolder1_imgNotify') !== null"
 )
 print("Debug - Bell icon exists:", bell_exists)
 
+# ----- Click Bell Icon Once (if exists) -----
 try:
-    bell = WebDriverWait(driver, 45).until(
+    bell = WebDriverWait(driver, 60).until(
         EC.element_to_be_clickable((By.CSS_SELECTOR, "#ctl00_ContentPlaceHolder1_imgNotify"))
     )
     ActionChains(driver).move_to_element(bell).click().perform()
@@ -179,12 +189,14 @@ try:
 except Exception:
     print("ℹ Bell icon not found or not clickable.")
 
+# ----- Scroll Down to End of Page and wait for dynamic content -----
 driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 time.sleep(5)
 
+# ----- Check for Assignment List Table -----
 assignment_message = ""
 try:
-    assignment_container = WebDriverWait(driver, 45).until(
+    assignment_container = WebDriverWait(driver, 60).until(
          EC.presence_of_element_located((By.CSS_SELECTOR, "#divAssignments"))
     )
     try:
