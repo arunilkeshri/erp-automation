@@ -19,11 +19,12 @@ ERP_URL = os.environ.get("ERP_URL")
 if not all([ROLL_NUMBER, PASSWORD, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, ERP_URL]):
     raise Exception("Missing one or more required environment variables.")
 
-# Set Tesseract path – on GitHub Actions (Linux) it's typically /usr/bin/tesseract.
-# Also print out which Tesseract command we are using.
-tesseract_cmd = os.environ.get("TESSERACT_PATH", "/usr/bin/tesseract")
-print("Using Tesseract command:", tesseract_cmd)
-pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
+# Explicitly check TESSERACT_PATH: if it's None or empty, default to '/usr/bin/tesseract'
+tess_path = os.environ.get("TESSERACT_PATH")
+if not tess_path or tess_path.strip() == "":
+    tess_path = "/usr/bin/tesseract"
+print("Using Tesseract command:", tess_path)
+pytesseract.pytesseract.tesseract_cmd = tess_path
 
 def send_telegram_message(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
@@ -38,7 +39,7 @@ chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--remote-debugging-port=9222")
-chrome_options.add_argument("--headless")  # Run headless in CI
+chrome_options.add_argument("--headless")  # Running headless in CI
 
 driver = uc.Chrome(options=chrome_options, version_main=133)
 driver.get(ERP_URL)
