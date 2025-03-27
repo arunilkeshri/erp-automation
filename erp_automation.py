@@ -31,23 +31,23 @@ def send_telegram_message(message):
     r = requests.post(url, json=payload)
     print("Telegram message response:", r.status_code, r.text)
 
-# Setup Chrome Driver options
+# Setup Chrome Driver options with a fixed window size
 chrome_options = uc.ChromeOptions()
 chrome_options.add_argument("--disable-blink-features=AutomationControlled")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--remote-debugging-port=9222")
-chrome_options.add_argument("--headless")  # Run headless in CI
+chrome_options.add_argument("--headless")  # Running headless in CI
+chrome_options.add_argument("--window-size=1920,1080")  # Set a fixed window size
 
 driver = uc.Chrome(options=chrome_options, version_main=133)
 driver.get(ERP_URL)
-time.sleep(5)
+time.sleep(5)  # Allow extra time for page load
 
 # ----- LOGIN PROCESS -----
 login_message = ""
 try:
-    # Locate username field (try both IDs)
     try:
         username_field = WebDriverWait(driver, 30).until(
             EC.presence_of_element_located((By.ID, "txt_username"))
@@ -57,7 +57,6 @@ try:
             EC.presence_of_element_located((By.ID, "txtusername"))
         )
     
-    # Locate password field (try both IDs)
     try:
         password_field = driver.find_element(By.ID, "txt_password")
     except Exception:
@@ -66,7 +65,7 @@ try:
     username_field.send_keys(ROLL_NUMBER)
     password_field.send_keys(PASSWORD)
     
-    # CAPTCHA handling: Use /tmp/captcha.png
+    # CAPTCHA handling: Use a fixed writable path in /tmp
     captcha_path = "/tmp/captcha.png"
     print("Using temporary captcha file:", captcha_path)
     
@@ -116,7 +115,6 @@ page_source_path = "/tmp/page_source.html"
 with open(page_source_path, "w") as f:
     f.write(driver.page_source)
 print("Page source saved to:", page_source_path)
-# Optionally, print a snippet:
 print("Page source snippet:", driver.page_source[:500])
 
 # ----- Close Notice/News Modal if Present -----
