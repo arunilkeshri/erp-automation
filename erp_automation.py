@@ -1,6 +1,7 @@
 import os
 import time
 import requests
+import tempfile
 import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -18,8 +19,11 @@ ERP_URL = os.environ.get("ERP_URL")
 if not all([ROLL_NUMBER, PASSWORD, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, ERP_URL]):
     raise Exception("Missing one or more required environment variables.")
 
-# Set Tesseract path – on GitHub Actions Linux runner it’s typically /usr/bin/tesseract
-pytesseract.pytesseract.tesseract_cmd = os.environ.get("TESSERACT_PATH", "/usr/bin/tesseract")
+# Set Tesseract path – on GitHub Actions (Linux) it's typically /usr/bin/tesseract.
+# Also print out which Tesseract command we are using.
+tesseract_cmd = os.environ.get("TESSERACT_PATH", "/usr/bin/tesseract")
+print("Using Tesseract command:", tesseract_cmd)
+pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
 
 def send_telegram_message(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
@@ -34,16 +38,16 @@ chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--remote-debugging-port=9222")
-chrome_options.add_argument("--headless")  # Running headless in CI
+chrome_options.add_argument("--headless")  # Run headless in CI
 
 driver = uc.Chrome(options=chrome_options, version_main=133)
 driver.get(ERP_URL)
-time.sleep(5)  # Extra wait for page load
+time.sleep(5)  # Allow extra time for page load
 
 # ----- LOGIN PROCESS -----
 login_message = ""
 try:
-    # Locate username field (try both IDs)
+    # Locate username field (try both possible IDs)
     try:
         username_field = WebDriverWait(driver, 30).until(
             EC.presence_of_element_located((By.ID, "txt_username"))
@@ -53,7 +57,7 @@ try:
             EC.presence_of_element_located((By.ID, "txtusername"))
         )
     
-    # Locate password field (try both IDs)
+    # Locate password field (try both possible IDs)
     try:
         password_field = driver.find_element(By.ID, "txt_password")
     except Exception:
@@ -70,15 +74,12 @@ try:
         EC.presence_of_element_located((By.ID, "captchaCanvas"))
     )
     
-    # Save the screenshot to /tmp/captcha.png
     if not captcha_element.screenshot(captcha_path):
         raise Exception("Captcha screenshot failed.")
     
-    # Check if file exists and print permissions
     if os.path.exists(captcha_path):
         print("Captcha file created at:", captcha_path)
         print("File permissions:", oct(os.stat(captcha_path).st_mode)[-3:])
-        # Optionally, change permissions to ensure it's readable/writable:
         os.chmod(captcha_path, 0o777)
         print("Permissions updated to 777.")
     else:
