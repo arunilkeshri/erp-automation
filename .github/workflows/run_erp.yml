@@ -17,6 +17,9 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      - name: Install Tesseract
+        run: sudo apt-get update && sudo apt-get install -y tesseract-ocr
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -34,5 +37,6 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           ERP_URL: ${{ secrets.ERP_URL }}
+          # TESSERACT_PATH secret is optional; if not set, it defaults to /usr/bin/tesseract.
           TESSERACT_PATH: ${{ secrets.TESSERACT_PATH }}
         run: python erp_automation.py
