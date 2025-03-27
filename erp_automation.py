@@ -127,7 +127,7 @@ try:
     driver.execute_script("arguments[0].click();", close_button)
     print("✅ Notice/News modal closed.")
 except Exception as e:
-    print("ℹ No Notice/News modal found or error closing modal:", e)
+    print("ℹ No Notice/News modal found or error closing modal.")
 
 # ----- Click 'LMS' Option -----
 try:
@@ -137,7 +137,7 @@ try:
     driver.execute_script("arguments[0].click();", lms)
     print("✅ 'LMS' option clicked.")
 except Exception as e:
-    print("ℹ Error clicking 'LMS' option:", e)
+    print("ℹ Error clicking 'LMS' option.")
 
 # ----- Click 'Transactions' Option from Submenu -----
 try:
@@ -146,8 +146,10 @@ try:
     )
     driver.execute_script("arguments[0].click();", transactions)
     print("✅ 'Transactions' option clicked.")
-except Exception as e:
-    print("ℹ Transactions option not found or not clickable:", e)
+except Exception:
+    print("ℹ Transactions option not found or not clickable.")
+    # A simple message without full exception details
+    transactions = None
 
 # ----- Wait for "Select Course" Heading -----
 try:
@@ -156,7 +158,7 @@ try:
     )
     print("✅ 'Select Course' heading found:", select_course_heading.text)
 except Exception as e:
-    print("ℹ 'Select Course' heading not found:", e)
+    print("ℹ 'Select Course' heading not found.")
 
 # ----- Click Bell Icon Once -----
 try:
@@ -165,8 +167,8 @@ try:
     )
     driver.execute_script("arguments[0].click();", bell)
     print("✅ Bell icon clicked once.")
-except Exception as e:
-    print("ℹ Bell icon not found or not clickable:", e)
+except Exception:
+    print("ℹ Bell icon not found or not clickable.")
 
 # ----- Scroll Down to End of Page -----
 driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -188,7 +190,7 @@ try:
     except Exception:
          assignment_message = "ℹ No assignments to upload."
 except Exception as e:
-    assignment_message = "ℹ 'Assignments List' container not found: " + str(e)
+    assignment_message = "ℹ 'Assignments List' container not found."
 
 final_message = login_message + "\n" + assignment_message
 send_telegram_message(final_message)
