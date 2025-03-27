@@ -5,6 +5,7 @@ import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
 import pytesseract
 from PIL import Image, ImageEnhance, ImageFilter
 
@@ -39,18 +40,14 @@ chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--remote-debugging-port=9222")
 chrome_options.add_argument("--window-size=1920,1080")
-# Add custom user agent
 chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36")
 
-# IMPORTANT: 
-# For GitHub Actions / CI environment (no display), headless mode must be enabled 
-# and browser binary location specified.
-if os.environ.get("CI"):  # Assuming you set CI variable in GitHub Actions environment
+# For CI environment, headless mode must be enabled and binary location specified.
+if os.environ.get("CI"):
     chrome_options.add_argument("--headless")
     chrome_options.binary_location = "/usr/bin/chromium-browser"
 else:
-    # For local testing with visible browser, comment out the headless argument.
-    # chrome_options.add_argument("--headless")
+    # Local testing with visible browser
     pass
 
 driver = uc.Chrome(options=chrome_options, version_main=133)
@@ -153,10 +150,10 @@ try:
     transactions = WebDriverWait(driver, 45).until(
         EC.element_to_be_clickable((By.CSS_SELECTOR, "[id='ctl00_mainMenu:submenu:9'] li:nth-child(1) > a"))
     )
-    driver.execute_script("arguments[0].scrollIntoView(true);", transactions)
-    time.sleep(1)
-    driver.execute_script("arguments[0].click();", transactions)
-    print("✅ 'Transactions' option clicked.")
+    # Use ActionChains to move to the element and click
+    actions = ActionChains(driver)
+    actions.move_to_element(transactions).click().perform()
+    print("✅ 'Transactions' option clicked using ActionChains.")
 except Exception:
     print("ℹ Transactions option not found or not clickable.")
 
@@ -177,10 +174,8 @@ try:
     bell = WebDriverWait(driver, 45).until(
         EC.element_to_be_clickable((By.CSS_SELECTOR, "#ctl00_ContentPlaceHolder1_imgNotify"))
     )
-    driver.execute_script("arguments[0].scrollIntoView(true);", bell)
-    time.sleep(1)
-    driver.execute_script("arguments[0].click();", bell)
-    print("✅ Bell icon clicked once.")
+    ActionChains(driver).move_to_element(bell).click().perform()
+    print("✅ Bell icon clicked using ActionChains.")
 except Exception:
     print("ℹ Bell icon not found or not clickable.")
 
