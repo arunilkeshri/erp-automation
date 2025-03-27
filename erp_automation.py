@@ -48,13 +48,13 @@ time.sleep(5)
 # ----- LOGIN PROCESS -----
 login_message = ""
 try:
-    # Locate username field
+    # Locate username field with increased timeout
     try:
-        username_field = WebDriverWait(driver, 30).until(
+        username_field = WebDriverWait(driver, 45).until(
             EC.presence_of_element_located((By.ID, "txt_username"))
         )
     except Exception:
-        username_field = WebDriverWait(driver, 30).until(
+        username_field = WebDriverWait(driver, 45).until(
             EC.presence_of_element_located((By.ID, "txtusername"))
         )
     
@@ -71,7 +71,7 @@ try:
     captcha_path = "/tmp/captcha.png"
     print("Using temporary captcha file:", captcha_path)
     
-    captcha_element = WebDriverWait(driver, 15).until(
+    captcha_element = WebDriverWait(driver, 30).until(
         EC.presence_of_element_located((By.ID, "captchaCanvas"))
     )
     
@@ -80,7 +80,6 @@ try:
     
     if os.path.exists(captcha_path):
         print("Captcha file created at:", captcha_path)
-        # Update permissions if required
         os.chmod(captcha_path, 0o777)
         print("Permissions updated to 777.")
     else:
@@ -121,48 +120,46 @@ print("Page source saved to:", page_source_path)
 
 # ----- Close Notice/News Modal if Present -----
 try:
-    close_button = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.XPATH, "//div[@class='modal-header']//button[@class='close']"))
+    close_button = WebDriverWait(driver, 30).until(
+        EC.element_to_be_clickable((By.XPATH, "//div[@class='modal-header']//button[@class='close']"))
     )
     driver.execute_script("arguments[0].click();", close_button)
     print("✅ Notice/News modal closed.")
-except Exception as e:
+except Exception:
     print("ℹ No Notice/News modal found or error closing modal.")
 
 # ----- Click 'LMS' Option -----
 try:
-    lms = WebDriverWait(driver, 30).until(
+    lms = WebDriverWait(driver, 45).until(
         EC.element_to_be_clickable((By.CSS_SELECTOR, "#ctl00_mainMenu > ul > li:nth-child(3) > a"))
     )
     driver.execute_script("arguments[0].click();", lms)
     print("✅ 'LMS' option clicked.")
-except Exception as e:
+except Exception:
     print("ℹ Error clicking 'LMS' option.")
 
 # ----- Click 'Transactions' Option from Submenu -----
 try:
-    transactions = WebDriverWait(driver, 30).until(
+    transactions = WebDriverWait(driver, 45).until(
         EC.element_to_be_clickable((By.CSS_SELECTOR, "[id='ctl00_mainMenu:submenu:9'] li:nth-child(1) > a"))
     )
     driver.execute_script("arguments[0].click();", transactions)
     print("✅ 'Transactions' option clicked.")
 except Exception:
     print("ℹ Transactions option not found or not clickable.")
-    # A simple message without full exception details
-    transactions = None
 
 # ----- Wait for "Select Course" Heading -----
 try:
-    select_course_heading = WebDriverWait(driver, 30).until(
+    select_course_heading = WebDriverWait(driver, 45).until(
         EC.presence_of_element_located((By.XPATH, "//*[contains(text(),'Select Course')]"))
     )
     print("✅ 'Select Course' heading found:", select_course_heading.text)
-except Exception as e:
+except Exception:
     print("ℹ 'Select Course' heading not found.")
 
 # ----- Click Bell Icon Once -----
 try:
-    bell = WebDriverWait(driver, 30).until(
+    bell = WebDriverWait(driver, 45).until(
         EC.element_to_be_clickable((By.CSS_SELECTOR, "#ctl00_ContentPlaceHolder1_imgNotify"))
     )
     driver.execute_script("arguments[0].click();", bell)
@@ -170,14 +167,14 @@ try:
 except Exception:
     print("ℹ Bell icon not found or not clickable.")
 
-# ----- Scroll Down to End of Page -----
+# ----- Scroll Down to End of Page and wait for dynamic content -----
 driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-time.sleep(3)
+time.sleep(5)
 
 # ----- Check for Assignment List Table -----
 assignment_message = ""
 try:
-    assignment_container = WebDriverWait(driver, 30).until(
+    assignment_container = WebDriverWait(driver, 45).until(
          EC.presence_of_element_located((By.CSS_SELECTOR, "#divAssignments"))
     )
     try:
@@ -189,7 +186,7 @@ try:
              assignment_message = "ℹ Assignment table is empty."
     except Exception:
          assignment_message = "ℹ No assignments to upload."
-except Exception as e:
+except Exception:
     assignment_message = "ℹ 'Assignments List' container not found."
 
 final_message = login_message + "\n" + assignment_message
