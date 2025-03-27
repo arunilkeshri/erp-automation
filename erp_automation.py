@@ -19,7 +19,7 @@ ERP_URL = os.environ.get("ERP_URL")
 if not all([ROLL_NUMBER, PASSWORD, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, ERP_URL]):
     raise Exception("Missing one or more required environment variables.")
 
-# Explicitly check TESSERACT_PATH: if it's None or empty, default to '/usr/bin/tesseract'
+# Explicitly check TESSERACT_PATH and default if needed
 tess_path = os.environ.get("TESSERACT_PATH")
 if not tess_path or tess_path.strip() == "":
     tess_path = "/usr/bin/tesseract"
@@ -43,7 +43,7 @@ chrome_options.add_argument("--headless")  # Running headless in CI
 
 driver = uc.Chrome(options=chrome_options, version_main=133)
 driver.get(ERP_URL)
-time.sleep(5)  # Allow extra time for page load
+time.sleep(5)  # Extra wait for page load
 
 # ----- LOGIN PROCESS -----
 login_message = ""
@@ -101,7 +101,7 @@ try:
     
     login_button = driver.find_element(By.ID, "btnLogin")
     login_button.click()
-    time.sleep(7)  # Wait for login process
+    time.sleep(7)  # Wait for login process to complete
     
     current_url = driver.current_url
     if "login" in current_url.lower():
@@ -112,6 +112,12 @@ try:
 except Exception as e:
     login_message = "❌ Error during login: " + str(e)
     print(login_message)
+
+# For debugging: Save page source after login
+page_source_path = "/tmp/page_source.html"
+with open(page_source_path, "w") as f:
+    f.write(driver.page_source)
+print("Page source saved to:", page_source_path)
 
 # ----- Close Notice/News Modal if Present -----
 try:
@@ -125,7 +131,7 @@ except Exception as e:
 
 # ----- Click 'LMS' Option -----
 try:
-    lms = WebDriverWait(driver, 20).until(
+    lms = WebDriverWait(driver, 30).until(
         EC.element_to_be_clickable((By.CSS_SELECTOR, "#ctl00_mainMenu > ul > li:nth-child(3) > a"))
     )
     driver.execute_script("arguments[0].click();", lms)
@@ -135,7 +141,7 @@ except Exception as e:
 
 # ----- Click 'Transactions' Option from Submenu -----
 try:
-    transactions = WebDriverWait(driver, 20).until(
+    transactions = WebDriverWait(driver, 30).until(
         EC.element_to_be_clickable((By.CSS_SELECTOR, "[id='ctl00_mainMenu:submenu:9'] li:nth-child(1) > a"))
     )
     driver.execute_script("arguments[0].click();", transactions)
@@ -145,7 +151,7 @@ except Exception as e:
 
 # ----- Wait for "Select Course" Heading -----
 try:
-    select_course_heading = WebDriverWait(driver, 20).until(
+    select_course_heading = WebDriverWait(driver, 30).until(
         EC.presence_of_element_located((By.XPATH, "//*[contains(text(),'Select Course')]"))
     )
     print("✅ 'Select Course' heading found:", select_course_heading.text)
@@ -154,7 +160,7 @@ except Exception as e:
 
 # ----- Click Bell Icon Once -----
 try:
-    bell = WebDriverWait(driver, 20).until(
+    bell = WebDriverWait(driver, 30).until(
         EC.element_to_be_clickable((By.CSS_SELECTOR, "#ctl00_ContentPlaceHolder1_imgNotify"))
     )
     driver.execute_script("arguments[0].click();", bell)
@@ -169,7 +175,7 @@ time.sleep(3)
 # ----- Check for Assignment List Table -----
 assignment_message = ""
 try:
-    assignment_container = WebDriverWait(driver, 20).until(
+    assignment_container = WebDriverWait(driver, 30).until(
          EC.presence_of_element_located((By.CSS_SELECTOR, "#divAssignments"))
     )
     try:
