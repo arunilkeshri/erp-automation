@@ -1,7 +1,6 @@
 import os
 import time
 import requests
-import tempfile
 import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -19,7 +18,7 @@ ERP_URL = os.environ.get("ERP_URL")
 if not all([ROLL_NUMBER, PASSWORD, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, ERP_URL]):
     raise Exception("Missing one or more required environment variables.")
 
-# Set Tesseract path – on Linux (GitHub Actions) it's typically /usr/bin/tesseract
+# Set Tesseract path – on GitHub Actions Linux runner it’s typically /usr/bin/tesseract
 pytesseract.pytesseract.tesseract_cmd = os.environ.get("TESSERACT_PATH", "/usr/bin/tesseract")
 
 def send_telegram_message(message):
@@ -39,7 +38,7 @@ chrome_options.add_argument("--headless")  # Running headless in CI
 
 driver = uc.Chrome(options=chrome_options, version_main=133)
 driver.get(ERP_URL)
-time.sleep(5)  # Allow extra time for page load
+time.sleep(5)  # Extra wait for page load
 
 # ----- LOGIN PROCESS -----
 login_message = ""
@@ -71,11 +70,19 @@ try:
         EC.presence_of_element_located((By.ID, "captchaCanvas"))
     )
     
-    # Save the screenshot; if it fails, raise an exception
+    # Save the screenshot to /tmp/captcha.png
     if not captcha_element.screenshot(captcha_path):
         raise Exception("Captcha screenshot failed.")
-    # Change file permissions to ensure it's writable
-    os.chmod(captcha_path, 0o777)
+    
+    # Check if file exists and print permissions
+    if os.path.exists(captcha_path):
+        print("Captcha file created at:", captcha_path)
+        print("File permissions:", oct(os.stat(captcha_path).st_mode)[-3:])
+        # Optionally, change permissions to ensure it's readable/writable:
+        os.chmod(captcha_path, 0o777)
+        print("Permissions updated to 777.")
+    else:
+        raise Exception("Captcha file not found after saving!")
     
     def process_captcha(image_path):
         img = Image.open(image_path).convert("L")
