@@ -2,12 +2,9 @@ name: ERP Automation
 
 on:
   schedule:
-    # 10:00 IST → 04:30 UTC
-    - cron: "30 4 * * *"
-    # 15:00 IST → 09:30 UTC
-    - cron: "30 9 * * *"
-    # 20:00 IST → 14:30 UTC
-    - cron: "30 14 * * *"
+    - cron: "30 4 * * *"    # 10:00 IST → 04:30 UTC
+    - cron: "30 9 * * *"    # 15:00 IST → 09:30 UTC
+    - cron: "30 14 * * *"   # 20:00 IST → 14:30 UTC
   workflow_dispatch:
 
 jobs:
@@ -37,6 +34,11 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           ERP_URL: ${{ secrets.ERP_URL }}
-          # TESSERACT_PATH secret is optional; if not set, it defaults to /usr/bin/tesseract.
           TESSERACT_PATH: ${{ secrets.TESSERACT_PATH }}
         run: python erp_automation.py
+
+      - name: Upload Page Source Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: page_source
+          path: /tmp/page_source.html
