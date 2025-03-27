@@ -38,16 +38,17 @@ chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--remote-debugging-port=9222")
-chrome_options.add_argument("--headless")  # Running headless in CI
-chrome_options.add_argument("--window-size=1920,1080")  # Set a fixed window size
+chrome_options.add_argument("--headless")
+chrome_options.add_argument("--window-size=1920,1080")
 
 driver = uc.Chrome(options=chrome_options, version_main=133)
 driver.get(ERP_URL)
-time.sleep(5)  # Allow extra time for page load
+time.sleep(5)
 
 # ----- LOGIN PROCESS -----
 login_message = ""
 try:
+    # Locate username field
     try:
         username_field = WebDriverWait(driver, 30).until(
             EC.presence_of_element_located((By.ID, "txt_username"))
@@ -57,6 +58,7 @@ try:
             EC.presence_of_element_located((By.ID, "txtusername"))
         )
     
+    # Locate password field
     try:
         password_field = driver.find_element(By.ID, "txt_password")
     except Exception:
@@ -65,13 +67,14 @@ try:
     username_field.send_keys(ROLL_NUMBER)
     password_field.send_keys(PASSWORD)
     
-    # CAPTCHA handling: Use a fixed writable path in /tmp
+    # CAPTCHA handling: Use fixed writable path in /tmp
     captcha_path = "/tmp/captcha.png"
     print("Using temporary captcha file:", captcha_path)
     
     captcha_element = WebDriverWait(driver, 15).until(
         EC.presence_of_element_located((By.ID, "captchaCanvas"))
     )
+    
     if not captcha_element.screenshot(captcha_path):
         raise Exception("Captcha screenshot failed.")
     
@@ -145,7 +148,7 @@ try:
     driver.execute_script("arguments[0].click();", transactions)
     print("✅ 'Transactions' option clicked.")
 except Exception as e:
-    print("ℹ Error clicking 'Transactions' option:", e)
+    print("ℹ Transactions option not found or not clickable:", e)
 
 # ----- Wait for "Select Course" Heading -----
 try:
@@ -164,7 +167,7 @@ try:
     driver.execute_script("arguments[0].click();", bell)
     print("✅ Bell icon clicked once.")
 except Exception as e:
-    print("ℹ Error clicking bell icon:", e)
+    print("ℹ Bell icon not found or not clickable:", e)
 
 # ----- Scroll Down to End of Page -----
 driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -183,7 +186,7 @@ try:
              assignment_message = "Assignment List:\n" + table_text
          else:
              assignment_message = "ℹ Assignment table is empty."
-    except Exception as e:
+    except Exception:
          assignment_message = "ℹ No assignments to upload."
 except Exception as e:
     assignment_message = "ℹ 'Assignments List' container not found: " + str(e)
