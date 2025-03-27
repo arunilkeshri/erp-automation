@@ -1,7 +1,6 @@
 import os
 import time
 import requests
-import tempfile
 import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -19,7 +18,7 @@ ERP_URL = os.environ.get("ERP_URL")
 if not all([ROLL_NUMBER, PASSWORD, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, ERP_URL]):
     raise Exception("Missing one or more required environment variables.")
 
-# Explicitly check TESSERACT_PATH and default if needed
+# Explicitly check TESSERACT_PATH and default if empty
 tess_path = os.environ.get("TESSERACT_PATH")
 if not tess_path or tess_path.strip() == "":
     tess_path = "/usr/bin/tesseract"
@@ -39,16 +38,16 @@ chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--remote-debugging-port=9222")
-chrome_options.add_argument("--headless")  # Running headless in CI
+chrome_options.add_argument("--headless")  # Run headless in CI
 
 driver = uc.Chrome(options=chrome_options, version_main=133)
 driver.get(ERP_URL)
-time.sleep(5)  # Extra wait for page load
+time.sleep(5)
 
 # ----- LOGIN PROCESS -----
 login_message = ""
 try:
-    # Locate username field (try both possible IDs)
+    # Locate username field (try both IDs)
     try:
         username_field = WebDriverWait(driver, 30).until(
             EC.presence_of_element_located((By.ID, "txt_username"))
@@ -58,7 +57,7 @@ try:
             EC.presence_of_element_located((By.ID, "txtusername"))
         )
     
-    # Locate password field (try both possible IDs)
+    # Locate password field (try both IDs)
     try:
         password_field = driver.find_element(By.ID, "txt_password")
     except Exception:
@@ -67,14 +66,13 @@ try:
     username_field.send_keys(ROLL_NUMBER)
     password_field.send_keys(PASSWORD)
     
-    # CAPTCHA handling: Use a fixed writable path in /tmp
+    # CAPTCHA handling: Use /tmp/captcha.png
     captcha_path = "/tmp/captcha.png"
     print("Using temporary captcha file:", captcha_path)
     
     captcha_element = WebDriverWait(driver, 15).until(
         EC.presence_of_element_located((By.ID, "captchaCanvas"))
     )
-    
     if not captcha_element.screenshot(captcha_path):
         raise Exception("Captcha screenshot failed.")
     
@@ -101,7 +99,7 @@ try:
     
     login_button = driver.find_element(By.ID, "btnLogin")
     login_button.click()
-    time.sleep(7)  # Wait for login process to complete
+    time.sleep(7)
     
     current_url = driver.current_url
     if "login" in current_url.lower():
@@ -113,11 +111,13 @@ except Exception as e:
     login_message = "❌ Error during login: " + str(e)
     print(login_message)
 
-# For debugging: Save page source after login
+# Save page source for debugging
 page_source_path = "/tmp/page_source.html"
 with open(page_source_path, "w") as f:
     f.write(driver.page_source)
 print("Page source saved to:", page_source_path)
+# Optionally, print a snippet:
+print("Page source snippet:", driver.page_source[:500])
 
 # ----- Close Notice/News Modal if Present -----
 try:
