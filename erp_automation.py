@@ -152,6 +152,9 @@ try:
     transactions = WebDriverWait(driver, 45).until(
         EC.element_to_be_clickable((By.CSS_SELECTOR, "[id='ctl00_mainMenu:submenu:9'] li:nth-child(1) > a"))
     )
+    # Scroll into view before clicking
+    driver.execute_script("arguments[0].scrollIntoView(true);", transactions)
+    time.sleep(1)
     driver.execute_script("arguments[0].click();", transactions)
     print("✅ 'Transactions' option clicked.")
 except Exception:
@@ -177,6 +180,9 @@ try:
     bell = WebDriverWait(driver, 45).until(
         EC.element_to_be_clickable((By.CSS_SELECTOR, "#ctl00_ContentPlaceHolder1_imgNotify"))
     )
+    # Scroll into view before clicking
+    driver.execute_script("arguments[0].scrollIntoView(true);", bell)
+    time.sleep(1)
     driver.execute_script("arguments[0].click();", bell)
     print("✅ Bell icon clicked once.")
 except Exception:
