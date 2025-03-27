@@ -18,7 +18,7 @@ ERP_URL = os.environ.get("ERP_URL")
 if not all([ROLL_NUMBER, PASSWORD, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, ERP_URL]):
     raise Exception("Missing one or more required environment variables.")
 
-# Explicitly check TESSERACT_PATH and default if empty
+# Set Tesseract path; default for Linux is /usr/bin/tesseract
 tess_path = os.environ.get("TESSERACT_PATH")
 if not tess_path or tess_path.strip() == "":
     tess_path = "/usr/bin/tesseract"
@@ -31,7 +31,7 @@ def send_telegram_message(message):
     r = requests.post(url, json=payload)
     print("Telegram message response:", r.status_code, r.text)
 
-# Setup Chrome Driver options with a fixed window size
+# Setup Chrome Driver options with fixed window size and headless mode enabled
 chrome_options = uc.ChromeOptions()
 chrome_options.add_argument("--disable-blink-features=AutomationControlled")
 chrome_options.add_argument("--no-sandbox")
@@ -67,7 +67,7 @@ try:
     username_field.send_keys(ROLL_NUMBER)
     password_field.send_keys(PASSWORD)
     
-    # CAPTCHA handling: Use fixed writable path in /tmp
+    # CAPTCHA handling: Save screenshot to /tmp folder
     captcha_path = "/tmp/captcha.png"
     print("Using temporary captcha file:", captcha_path)
     
@@ -80,7 +80,7 @@ try:
     
     if os.path.exists(captcha_path):
         print("Captcha file created at:", captcha_path)
-        print("File permissions:", oct(os.stat(captcha_path).st_mode)[-3:])
+        # Update permissions if required
         os.chmod(captcha_path, 0o777)
         print("Permissions updated to 777.")
     else:
@@ -118,7 +118,6 @@ page_source_path = "/tmp/page_source.html"
 with open(page_source_path, "w") as f:
     f.write(driver.page_source)
 print("Page source saved to:", page_source_path)
-print("Page source snippet:", driver.page_source[:500])
 
 # ----- Close Notice/News Modal if Present -----
 try:
