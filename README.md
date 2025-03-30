@@ -33,5 +33,5 @@ ERP Automation is scheduled to run daily using GitHub Actions, ensuring that the
 1. **Clone the Repository:**
 
    ```bash
-   git clone https://github.com/arunilkeshri/erp-automation
+   git clone https://github.com/arunilkeshri/erp-automation.git
    cd erp-automation
