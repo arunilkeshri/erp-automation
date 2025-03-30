@@ -18,8 +18,7 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 ERP_URL = "https://jecrc.mastersofterp.in/iitmsv4eGq0RuNHb0G5WbhLmTKLmTO7YBcJ4RHuXxCNPvuIw=?enc=EGbCGWnlHNJ/WdgJnKH8DA=="
 
 # ========== Set Tesseract Path ==========
-# For GitHub Actions (Linux), adjust this path if needed.
-pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
+pytesseract.pytesseract.tesseract_cmd = r"/usr/bin/tesseract"  # Adjust for environment (Linux/GitHub Actions)
 
 # ========== Telegram Function ==========
 def send_telegram_message(message):
@@ -30,7 +29,7 @@ def send_telegram_message(message):
 
 # ========== Setup Chrome Driver Options ==========
 chrome_options = uc.ChromeOptions()
-chrome_options.add_argument("--headless")  # Enable headless mode for GitHub Actions
+chrome_options.add_argument("--headless")  # Enable headless mode for CI/CD environments
 chrome_options.add_argument("--disable-blink-features=AutomationControlled")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
@@ -38,7 +37,7 @@ chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--remote-debugging-port=9222")
 
 # Start Chrome without specifying version_main
-driver = uc.Chrome(options=chrome_options)  
+driver = uc.Chrome(options=chrome_options)
 driver.get(ERP_URL)
 time.sleep(3)
 
@@ -171,11 +170,7 @@ try:
 except Exception as e:
     print("ℹ 'Assignments List' container not found:", e)
 
-# ====== Keep Browser Window Open ======
-print("Automation complete. Browser window will remain open. Close it manually when done.")
-try:
-    while True:
-        time.sleep(1)
-except KeyboardInterrupt:
-    print("Script interrupted. Please close the browser manually.")
-    driver.quit()
+# ====== Automatic Browser Close ======
+print("Automation complete. Browser will close in 10 seconds.")
+time.sleep(10)
+driver.quit()
