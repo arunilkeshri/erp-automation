@@ -9,17 +9,17 @@ import pytesseract
 from PIL import Image, ImageEnhance, ImageFilter
 
 # ========== Load Credentials from Environment Variables ==========
-ROLL_NUMBER = os.getenv("ROLL_NUMBER")         # Set this in your environment or GitHub Secrets
-PASSWORD = os.getenv("PASSWORD")               # Set this in your environment or GitHub Secrets
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")  # Set this in your environment or GitHub Secrets
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")      # Set this in your environment or GitHub Secrets
+ROLL_NUMBER = os.getenv("ROLL_NUMBER")
+PASSWORD = os.getenv("PASSWORD")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 # ========== ERP URL ==========
 ERP_URL = "https://jecrc.mastersofterp.in/iitmsv4eGq0RuNHb0G5WbhLmTKLmTO7YBcJ4RHuXxCNPvuIw=?enc=EGbCGWnlHNJ/WdgJnKH8DA=="
 
 # ========== Set Tesseract Path ==========
-# For local Windows testing, use the following path. For GitHub Actions (Linux), adjust accordingly.
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+# For GitHub Actions (Linux), adjust this path if needed.
+pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
 
 # ========== Telegram Function ==========
 def send_telegram_message(message):
@@ -30,16 +30,15 @@ def send_telegram_message(message):
 
 # ========== Setup Chrome Driver Options ==========
 chrome_options = uc.ChromeOptions()
+chrome_options.add_argument("--headless")  # Enable headless mode for GitHub Actions
 chrome_options.add_argument("--disable-blink-features=AutomationControlled")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--remote-debugging-port=9222")
-# Uncomment the following line for headless execution (for GitHub Actions)
-# chrome_options.add_argument("--headless")
 
-# Start Chrome with undetected-chromedriver
-driver = uc.Chrome(options=chrome_options, version_main=133)
+# Start Chrome without specifying version_main
+driver = uc.Chrome(options=chrome_options)  
 driver.get(ERP_URL)
 time.sleep(3)
 
