@@ -95,6 +95,7 @@ try:
         exit()
     else:
         print("✅ ERP Login Successful!")
+        send_telegram_message("✅ ERP Login Successful!")
 except Exception as e:
     print("❌ Error during login:", e)
     send_telegram_message("❌ Login Failed!")
