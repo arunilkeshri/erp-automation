@@ -90,9 +90,11 @@ try:
     current_url = driver.current_url
     if "login" in current_url.lower():
         print("❌ ERP Login Failed!")
+        send_telegram_message("❌ Login Failed!")
+        driver.quit()
+        exit()
     else:
         print("✅ ERP Login Successful!")
-        send_telegram_message("✅ ERP Login Successful!")
 except Exception as e:
     print("❌ Error during login:", e)
     send_telegram_message("❌ Login Failed!")
@@ -163,10 +165,10 @@ try:
          if table_text.strip():
              send_telegram_message("Assignment List:\n" + table_text)
          else:
-             send_telegram_message("ℹ Assignment table is empty.")
+             send_telegram_message("You don't have any assignments to upload.")
     except Exception as e:
          print("ℹ Assignment table not found; no assignments to upload.", e)
-         send_telegram_message("ℹ No assignments to upload.")
+         send_telegram_message("You don't have any assignments to upload.")
 except Exception as e:
     print("ℹ 'Assignments List' container not found:", e)
 
