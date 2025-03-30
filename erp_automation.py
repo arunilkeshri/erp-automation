@@ -43,14 +43,18 @@ time.sleep(3)
 
 # ========== LOGIN PROCESS ==========
 try:
-    username_field = WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.ID, "txt_username")))
+    username_field = WebDriverWait(driver, 20).until(
+        EC.presence_of_element_located((By.ID, "txt_username"))
+    )
     password_field = driver.find_element(By.ID, "txt_password")
 
     username_field.send_keys(ROLL_NUMBER)
     password_field.send_keys(PASSWORD)
 
     # CAPTCHA Handling
-    captcha_element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "captchaCanvas")))
+    captcha_element = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.ID, "captchaCanvas"))
+    )
     captcha_path = "/tmp/captcha.png"
     captcha_element.screenshot(captcha_path)
 
