@@ -1,5 +1,5 @@
-undetected-chromedriver
-selenium
-pytesseract
-Pillow
 requests
+undetected-chromedriver
+pytesseract
+pillow
+selenium
