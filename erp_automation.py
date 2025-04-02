@@ -36,8 +36,8 @@ chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--remote-debugging-port=9222")
 
-# Start Chrome without specifying version_main
-driver = uc.Chrome(options=chrome_options)
+# Start Chrome with the correct version specified
+driver = uc.Chrome(options=chrome_options, version_main=134)
 driver.get(ERP_URL)
 time.sleep(3)
 
