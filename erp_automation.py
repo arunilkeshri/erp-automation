@@ -7,6 +7,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import pytesseract
 from PIL import Image, ImageEnhance, ImageFilter
+import subprocess
 
 # ========== Load Credentials from Environment Variables ==========
 ROLL_NUMBER = os.getenv("ROLL_NUMBER")
@@ -36,8 +37,24 @@ chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--remote-debugging-port=9222")
 
-# Start Chrome with the correct version specified
-driver = uc.Chrome(options=chrome_options, version_main=134)
+# ========== Determine Installed Chrome Major Version ==========
+def get_chrome_major_version():
+    try:
+        output = subprocess.check_output(["google-chrome", "--version"])  # or "chromium-browser"
+        version_str = output.decode().strip().split()[-1]
+        return int(version_str.split('.')[0])
+    except Exception as e:
+        print("⚠️ Could not detect Chrome version, falling back to automatic:", e)
+        return None
+
+chrome_major = get_chrome_major_version()
+
+# Start Chrome, specifying version_main if detected
+if chrome_major:
+    driver = uc.Chrome(options=chrome_options, version_main=chrome_major)
+else:
+    driver = uc.Chrome(options=chrome_options)
+
 driver.get(ERP_URL)
 time.sleep(3)
 
@@ -113,67 +130,43 @@ try:
 except Exception as e:
     print("ℹ No Notice/News modal found or error closing modal:", e)
 
-# ========== Click 'LMS' Option ==========
+# ========== Navigate to LMS Transactions ==========
 try:
-    time.sleep(1)  # Wait for the top menu to be interactable
+    time.sleep(1)
     driver.execute_script("document.querySelector('#ctl00_mainMenu > ul > li:nth-child(3) > a').click();")
     print("✅ 'LMS' option clicked.")
-except Exception as e:
-    print("ℹ Error clicking 'LMS' option:", e)
-
-# ========== Click 'Transactions' Option from Submenu ==========
-try:
-    time.sleep(1)  # Wait for submenu to appear
-    driver.execute_script(
-        "document.querySelector(\"[id='ctl00_mainMenu:submenu:9'] li:nth-child(1) > a\").click();"
-    )
+    time.sleep(1)
+    driver.execute_script("document.querySelector(\"[id='ctl00_mainMenu:submenu:9'] li:nth-child(1) > a\").click();")
     print("✅ 'Transactions' option clicked.")
 except Exception as e:
-    print("ℹ Error clicking 'Transactions' option:", e)
+    print("ℹ Error navigating menus:", e)
 
-# ========== Wait for 'Select Course' Heading ==========
+# ========== Wait for and Process Assignments ==========
 try:
     select_course_heading = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.XPATH, "//*[contains(text(),'Select Course')]"))
+        EC.presence_of_element_located((By.XPATH, "//*[contains(text(),'Select Course')]))
     )
-    print("✅ 'Select Course' heading found:", select_course_heading.text)
-except Exception as e:
-    print("ℹ 'Select Course' heading not found:", e)
-
-# ========== Click Bell Icon Once ==========
-try:
-    time.sleep(1)  # Allow time for adjustments after heading appears
+    print("✅ 'Select Course' heading found.")
     driver.execute_script("document.querySelector('#ctl00_ContentPlaceHolder1_imgNotify').click();")
-    print("✅ Bell icon clicked once.")
-except Exception as e:
-    print("ℹ Error clicking bell icon:", e)
-
-# ========== Scroll Down to End of Page ==========
-driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-time.sleep(2)
-
-# ========== Check for Assignment List Table and Send via Telegram as Text ==========
-try:
+    print("✅ Bell icon clicked.")
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    time.sleep(2)
     assignment_container = WebDriverWait(driver, 10).until(
          EC.presence_of_element_located((By.CSS_SELECTOR, "#divAssignments"))
     )
     print("✅ 'Assignments List' container found.")
-    
-    try:
-         table_element = assignment_container.find_element(By.ID, "DataTables_Table_0")
-         print("✅ Assignment table found.")
-         table_text = table_element.text
-         if table_text.strip():
-             send_telegram_message("Assignment List:\n" + table_text)
-         else:
-             send_telegram_message("You don't have any assignments to upload.")
-    except Exception as e:
-         print("ℹ Assignment table not found; no assignments to upload.", e)
+    table_element = assignment_container.find_element(By.ID, "DataTables_Table_0")
+    print("✅ Assignment table found.")
+    table_text = table_element.text
+    if table_text.strip():
+         send_telegram_message("Assignment List:\n" + table_text)
+    else:
          send_telegram_message("You don't have any assignments to upload.")
 except Exception as e:
-    print("ℹ 'Assignments List' container not found:", e)
+    print("ℹ No assignments found or error:", e)
+    send_telegram_message("You don't have any assignments to upload.")
 
 # ====== Automatic Browser Close ======
-print("Automation complete. Browser will close in 10 seconds.")
+print("Automation complete. Closing browser shortly.")
 time.sleep(10)
 driver.quit()
