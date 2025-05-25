@@ -19,7 +19,7 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 ERP_URL = "https://jecrc.mastersofterp.in/iitmsv4eGq0RuNHb0G5WbhLmTKLmTO7YBcJ4RHuXxCNPvuIw=?enc=EGbCGWnlHNJ/WdgJnKH8DA=="
 
 # ========== Set Tesseract Path ==========
-pytesseract.pytesseract.tesseract_cmd = r"/usr/bin/tesseract"  # Adjust for environment (Linux/GitHub Actions)
+pytesseract.pytesseract.tesseract_cmd = r"/usr/bin/tesseract"
 
 # ========== Telegram Function ==========
 def send_telegram_message(message):
@@ -30,7 +30,7 @@ def send_telegram_message(message):
 
 # ========== Setup Chrome Driver Options ==========
 chrome_options = uc.ChromeOptions()
-chrome_options.add_argument("--headless")  # Enable headless mode for CI/CD environments
+chrome_options.add_argument("--headless")
 chrome_options.add_argument("--disable-blink-features=AutomationControlled")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
@@ -60,27 +60,24 @@ time.sleep(3)
 
 # ========== LOGIN PROCESS ==========
 try:
-    # Locate username field (try both IDs)
     try:
         username_field = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.ID, "txt_username"))
         )
-    except Exception:
+    except:
         username_field = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.ID, "txtusername"))
         )
     
-    # Locate password field (try both IDs)
     try:
         password_field = driver.find_element(By.ID, "txt_password")
-    except Exception:
+    except:
         password_field = driver.find_element(By.ID, "txtpassword")
     
     print("✅ Username & Password fields found.")
     username_field.send_keys(ROLL_NUMBER)
     password_field.send_keys(PASSWORD)
     
-    # CAPTCHA handling: Capture and process CAPTCHA image
     captcha_element = WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.ID, "captchaCanvas"))
     )
@@ -144,8 +141,8 @@ except Exception as e:
 # ========== Wait for and Process Assignments ==========
 try:
     select_course_heading = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.XPATH, "//*[contains(text(),'Select Course')]))
-    )
+        EC.presence_of_element_located((By.XPATH, "//*[contains(text(),'Select Course')]")
+    ))
     print("✅ 'Select Course' heading found.")
     driver.execute_script("document.querySelector('#ctl00_ContentPlaceHolder1_imgNotify').click();")
     print("✅ Bell icon clicked.")
